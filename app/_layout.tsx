@@ -1,3 +1,5 @@
+import '../global.css';
+
 import * as Sentry from '@sentry/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
