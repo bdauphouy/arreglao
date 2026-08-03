@@ -56,6 +56,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         locationWhenInUsePermission:
           'Arreglao usa tu ubicación solo si tocas "Usar mi ubicación" al elegir un punto en el mapa.',
+        locationAlwaysAndWhenInUsePermission: false,
+        locationAlwaysPermission: false,
       },
     ],
     [
