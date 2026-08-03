@@ -22,33 +22,69 @@ export function displayNameFor(profile: Profile): string {
   return profile.displayName ?? `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim();
 }
 
+const PROFILE_COLUMNS =
+  'id, email, first_name, last_name, display_name, avatar_url, bio, location_lat, location_lng, category_tags, average_rating';
+
+function toProfile(row: {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
+  category_tags: JobCategory[] | null;
+  average_rating: number | null;
+}): Profile {
+  return {
+    id: row.id,
+    email: row.email,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    displayName: row.display_name,
+    avatarUrl: row.avatar_url,
+    bio: row.bio,
+    location:
+      row.location_lat != null && row.location_lng != null
+        ? { lat: row.location_lat, lng: row.location_lng }
+        : null,
+    categoryTags: row.category_tags ?? [],
+    averageRating: row.average_rating,
+  };
+}
+
 export async function getProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
-    .select(
-      'id, email, first_name, last_name, display_name, avatar_url, bio, location_lat, location_lng, category_tags, average_rating',
-    )
+    .select(PROFILE_COLUMNS)
     .eq('id', userId)
     .single();
   if (error) {
     throw error;
   }
+  return toProfile(data);
+}
 
-  return {
-    id: data.id,
-    email: data.email,
-    firstName: data.first_name,
-    lastName: data.last_name,
-    displayName: data.display_name,
-    avatarUrl: data.avatar_url,
-    bio: data.bio,
-    location:
-      data.location_lat != null && data.location_lng != null
-        ? { lat: data.location_lat, lng: data.location_lng }
-        : null,
-    categoryTags: data.category_tags ?? [],
-    averageRating: data.average_rating,
-  };
+export async function getProfiles(userIds: string[]): Promise<Profile[]> {
+  if (userIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).in('id', userIds);
+  if (error) {
+    throw error;
+  }
+  return data.map(toProfile);
+}
+
+export async function listHelpers(): Promise<Profile[]> {
+  const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS);
+  if (error) {
+    throw error;
+  }
+  return data.map(toProfile).filter((profile) => profile.categoryTags.length > 0);
 }
 
 export async function updateProfileName(

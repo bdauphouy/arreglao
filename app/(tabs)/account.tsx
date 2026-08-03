@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, Text, View } from 'react-native';
@@ -16,6 +17,7 @@ import {
 import { AvatarPicker } from '../../src/components/avatar-picker';
 import { Button } from '../../src/components/button';
 import { CategoryTagPicker } from '../../src/components/category-tag-picker';
+import { IconButton } from '../../src/components/icon-button';
 import { LocationPicker } from '../../src/components/location-picker';
 import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
@@ -79,7 +81,12 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
 
   return (
     <SafeAreaView className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-6">
+      <View className="px-6 pt-6">
+        <IconButton onPress={() => router.back()}>
+          <ArrowLeft color="#14170F" size={20} />
+        </IconButton>
+      </View>
+      <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-2">
         <View className="items-center gap-3">
           <AvatarPicker
             avatarUrl={profile.avatarUrl}

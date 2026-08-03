@@ -1,5 +1,5 @@
 import { Tabs, router } from 'expo-router';
-import { Home, Plus, User } from 'lucide-react-native';
+import { Home, Map, MessageCircle, Plus, Users } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 function PublishTabButton() {
@@ -34,6 +34,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="joblist"
+        options={{
+          title: 'Mapa',
+          tabBarIcon: ({ color, size }) => <Map color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="publish"
         options={{
           title: '',
@@ -41,12 +48,20 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="account"
+        name="helpers"
         options={{
-          title: 'Cuenta',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          title: 'Ayudantes',
+          tabBarIcon: ({ color, size }) => <Users color={color} size={size} />,
         }}
       />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Mensajes',
+          tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen name="account" options={{ href: null }} />
     </Tabs>
   );
 }

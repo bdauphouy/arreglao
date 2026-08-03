@@ -87,6 +87,16 @@ export async function getAnnonce(id: string): Promise<Annonce> {
   return toAnnonce(data);
 }
 
+export async function assignAnnonce(id: string, helperId: string): Promise<void> {
+  const { error } = await supabase
+    .from('annonces')
+    .update({ status: 'assigned', chosen_helper_id: helperId })
+    .eq('id', id);
+  if (error) {
+    throw error;
+  }
+}
+
 export async function cancelAnnonce(id: string): Promise<void> {
   const { error } = await supabase
     .from('annonces')
