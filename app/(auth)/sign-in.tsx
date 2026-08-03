@@ -3,10 +3,16 @@ import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { requestEmailOtp, verifyEmailOtp } from '../../src/api/auth';
+import { getProfile } from '../../src/api/profiles';
 import { emailSchema, otpSchema, type EmailInput, type OtpInput } from '../../src/schemas/auth';
+import { OtpDigitsInput } from '../../src/components/otp-digits-input';
+import { TextField } from '../../src/components/text-field';
+
+class ProfileLookupError extends Error {}
 
 export default function SignInScreen() {
   const [email, setEmail] = useState<string | null>(null);
@@ -29,40 +35,55 @@ function EmailStep({ onCodeSent }: { onCodeSent: (email: string) => void }) {
   });
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Ingresa tu correo</Text>
-      <Text style={styles.subtitle}>Te enviaremos un código de verificación por correo.</Text>
+    <SafeAreaView className="flex-1 bg-sand">
+      <View className="flex-1 justify-center gap-6 px-6">
+        <View className="gap-3">
+          <Text className="font-sans-extrabold text-3xl text-ink-900">Ingresa tu correo</Text>
+          <Text className="font-sans text-base text-olive-600">
+            Te enviaremos un código de 6 dígitos para ingresar.
+          </Text>
+        </View>
 
-      <Controller
-        control={control}
-        name="email"
-        render={({ field, fieldState }) => (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="correo@ejemplo.com"
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              value={field.value}
-              onChangeText={field.onChange}
-            />
-            {fieldState.error ? <Text style={styles.error}>{fieldState.error.message}</Text> : null}
-          </>
-        )}
-      />
-      {requestOtp.isError ? (
-        <Text style={styles.error}>No se pudo enviar el código. Inténtalo de nuevo.</Text>
-      ) : null}
+        <View className="gap-3">
+          <Controller
+            control={control}
+            name="email"
+            render={({ field, fieldState }) => (
+              <>
+                <TextField
+                  placeholder="correo@ejemplo.com"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                />
+                {fieldState.error ? (
+                  <Text className="font-sans text-xs text-red-700">{fieldState.error.message}</Text>
+                ) : null}
+              </>
+            )}
+          />
+          {requestOtp.isError ? (
+            <Text className="font-sans text-xs text-red-700">
+              No se pudo enviar el código. Inténtalo de nuevo.
+            </Text>
+          ) : null}
+        </View>
+      </View>
 
-      <Pressable
-        style={styles.button}
-        onPress={handleSubmit((data) => requestOtp.mutate(data))}
-        disabled={requestOtp.isPending}
-      >
-        <Text style={styles.buttonText}>{requestOtp.isPending ? 'Enviando…' : 'Continuar'}</Text>
-      </Pressable>
-    </View>
+      <View className="px-6 pb-6">
+        <Pressable
+          className="items-center rounded-full bg-accent px-6 py-4 active:bg-accent-active"
+          onPress={handleSubmit((data) => requestOtp.mutate(data))}
+          disabled={requestOtp.isPending}
+        >
+          <Text className="font-sans-semibold text-base text-ink-900">
+            {requestOtp.isPending ? 'Enviando…' : 'Continuar'}
+          </Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -72,76 +93,86 @@ function OtpStep({ email, onChangeEmail }: { email: string; onChangeEmail: () =>
     defaultValues: { token: '' },
   });
   const verifyOtp = useMutation({
-    mutationFn: (data: OtpInput) => verifyEmailOtp(email, data.token),
-    onSuccess: () => router.replace('/'),
+    mutationFn: async (data: OtpInput) => {
+      const { user } = await verifyEmailOtp(email, data.token);
+      if (!user) {
+        throw new ProfileLookupError('No user returned from OTP verification');
+      }
+      try {
+        return await getProfile(user.id);
+      } catch (cause) {
+        throw new ProfileLookupError('Failed to load profile after verification', { cause });
+      }
+    },
+    onSuccess: (profile) => {
+      router.replace(profile.firstName ? '/' : '/(auth)/profile-details');
+    },
   });
   const resendOtp = useMutation({
     mutationFn: () => requestEmailOtp(email),
   });
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Verifica tu correo</Text>
-      <Text style={styles.subtitle}>Ingresa el código de 6 dígitos que enviamos a {email}.</Text>
+    <SafeAreaView className="flex-1 bg-sand">
+      <View className="flex-1 justify-center gap-6 px-6">
+        <View className="gap-3">
+          <Text className="font-sans-extrabold text-3xl text-ink-900">Ingresa tu código</Text>
+          <Text className="font-sans text-base text-olive-600">
+            Te enviamos un código de 6 dígitos a {email}.
+          </Text>
+        </View>
 
-      <Controller
-        control={control}
-        name="token"
-        render={({ field, fieldState }) => (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="Código de verificación"
-              keyboardType="number-pad"
-              maxLength={6}
-              value={field.value}
-              onChangeText={field.onChange}
-            />
-            {fieldState.error ? <Text style={styles.error}>{fieldState.error.message}</Text> : null}
-          </>
-        )}
-      />
-      {verifyOtp.isError ? <Text style={styles.error}>Código inválido.</Text> : null}
-      {resendOtp.isError ? <Text style={styles.error}>No se pudo reenviar el código.</Text> : null}
+        <View className="gap-3">
+          <Controller
+            control={control}
+            name="token"
+            render={({ field, fieldState }) => (
+              <>
+                <OtpDigitsInput value={field.value} onChange={field.onChange} />
+                {fieldState.error ? (
+                  <Text className="font-sans text-xs text-red-700">{fieldState.error.message}</Text>
+                ) : null}
+              </>
+            )}
+          />
+          {verifyOtp.isError ? (
+            <Text className="font-sans text-xs text-red-700">
+              {verifyOtp.error instanceof ProfileLookupError
+                ? 'Verificamos tu código, pero no pudimos cargar tu perfil. Inténtalo de nuevo.'
+                : 'Código inválido.'}
+            </Text>
+          ) : null}
+          {resendOtp.isError ? (
+            <Text className="font-sans text-xs text-red-700">No se pudo reenviar el código.</Text>
+          ) : null}
+        </View>
+      </View>
 
-      <Pressable
-        style={styles.button}
-        onPress={handleSubmit((data) => verifyOtp.mutate(data))}
-        disabled={verifyOtp.isPending}
-      >
-        <Text style={styles.buttonText}>{verifyOtp.isPending ? 'Verificando…' : 'Verificar'}</Text>
-      </Pressable>
+      <View className="gap-3 px-6 pb-6">
+        <Pressable
+          className="items-center rounded-full bg-accent px-6 py-4 active:bg-accent-active"
+          onPress={handleSubmit((data) => verifyOtp.mutate(data))}
+          disabled={verifyOtp.isPending}
+        >
+          <Text className="font-sans-semibold text-base text-ink-900">
+            {verifyOtp.isPending ? 'Ingresando…' : 'Ingresar'}
+          </Text>
+        </Pressable>
 
-      <Pressable onPress={() => resendOtp.mutate()} disabled={resendOtp.isPending}>
-        <Text style={styles.link}>{resendOtp.isPending ? 'Reenviando…' : 'Reenviar código'}</Text>
-      </Pressable>
+        <Pressable
+          className="items-center rounded-full bg-white px-6 py-4"
+          onPress={() => resendOtp.mutate()}
+          disabled={resendOtp.isPending}
+        >
+          <Text className="font-sans-semibold text-base text-ink-900">
+            {resendOtp.isPending ? 'Reenviando…' : 'Reenviar código'}
+          </Text>
+        </Pressable>
 
-      <Pressable onPress={onChangeEmail}>
-        <Text style={styles.link}>Cambiar correo</Text>
-      </Pressable>
-    </View>
+        <Pressable className="items-center rounded-full bg-white px-6 py-4" onPress={onChangeEmail}>
+          <Text className="font-sans-semibold text-base text-ink-900">Cambiar correo</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, justifyContent: 'center', gap: 12 },
-  heading: { fontSize: 24, fontWeight: '700' },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 4 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  error: { color: '#c0392b', fontSize: 12 },
-  button: {
-    backgroundColor: '#111',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  link: { textAlign: 'center', color: '#111', fontWeight: '500', marginTop: 4 },
-});

@@ -1,10 +1,20 @@
 import '../global.css';
 
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import * as Sentry from '@sentry/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { PostHogProvider } from 'posthog-react-native';
 import type { PropsWithChildren } from 'react';
+import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { env } from '../src/lib/env';
@@ -13,6 +23,7 @@ import { initSentry } from '../src/lib/sentry';
 import { ErrorBoundary } from '../src/components/error-boundary';
 
 initSentry();
+SplashScreen.preventAutoHideAsync();
 
 function OptionalPostHogProvider({ children }: PropsWithChildren) {
   if (!env.posthogApiKey) {
@@ -30,6 +41,24 @@ function OptionalPostHogProvider({ children }: PropsWithChildren) {
 }
 
 function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>

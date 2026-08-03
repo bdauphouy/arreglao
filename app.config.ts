@@ -43,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-status-bar',
     'expo-secure-store',
     'expo-splash-screen',
+    'expo-font',
     [
       '@sentry/react-native/expo',
       {
