@@ -5,48 +5,45 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { requestPhoneOtp, verifyPhoneOtp } from '../../src/api/auth';
-import { otpSchema, phoneSchema, type OtpInput, type PhoneInput } from '../../src/schemas/auth';
+import { requestEmailOtp, verifyEmailOtp } from '../../src/api/auth';
+import { emailSchema, otpSchema, type EmailInput, type OtpInput } from '../../src/schemas/auth';
 
 export default function SignInScreen() {
-  const [phone, setPhone] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
-  if (phone) {
-    return <OtpStep phone={phone} onChangeNumber={() => setPhone(null)} />;
+  if (email) {
+    return <OtpStep email={email} onChangeEmail={() => setEmail(null)} />;
   }
 
-  return <PhoneStep onCodeSent={setPhone} />;
+  return <EmailStep onCodeSent={setEmail} />;
 }
 
-function PhoneStep({ onCodeSent }: { onCodeSent: (phone: string) => void }) {
-  const { control, handleSubmit } = useForm<PhoneInput>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: { phone: '' },
+function EmailStep({ onCodeSent }: { onCodeSent: (email: string) => void }) {
+  const { control, handleSubmit } = useForm<EmailInput>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: '' },
   });
   const requestOtp = useMutation({
-    mutationFn: (data: PhoneInput) => requestPhoneOtp(data.phone),
-    onSuccess: (_, data) => onCodeSent(data.phone),
+    mutationFn: (data: EmailInput) => requestEmailOtp(data.email),
+    onSuccess: (_, data) => onCodeSent(data.email),
   });
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Ingresa tu número</Text>
-      <Text style={styles.subtitle}>
-        Te enviaremos un código de verificación por SMS. Incluye el código de tu país, ej.
-        +15555550100.
-      </Text>
+      <Text style={styles.heading}>Ingresa tu correo</Text>
+      <Text style={styles.subtitle}>Te enviaremos un código de verificación por correo.</Text>
 
       <Controller
         control={control}
-        name="phone"
+        name="email"
         render={({ field, fieldState }) => (
           <>
             <TextInput
               style={styles.input}
-              placeholder="Número de teléfono"
+              placeholder="correo@ejemplo.com"
               autoCapitalize="none"
-              autoComplete="tel"
-              keyboardType="phone-pad"
+              autoComplete="email"
+              keyboardType="email-address"
               value={field.value}
               onChangeText={field.onChange}
             />
@@ -69,23 +66,23 @@ function PhoneStep({ onCodeSent }: { onCodeSent: (phone: string) => void }) {
   );
 }
 
-function OtpStep({ phone, onChangeNumber }: { phone: string; onChangeNumber: () => void }) {
+function OtpStep({ email, onChangeEmail }: { email: string; onChangeEmail: () => void }) {
   const { control, handleSubmit } = useForm<OtpInput>({
     resolver: zodResolver(otpSchema),
     defaultValues: { token: '' },
   });
   const verifyOtp = useMutation({
-    mutationFn: (data: OtpInput) => verifyPhoneOtp(phone, data.token),
+    mutationFn: (data: OtpInput) => verifyEmailOtp(email, data.token),
     onSuccess: () => router.replace('/'),
   });
   const resendOtp = useMutation({
-    mutationFn: () => requestPhoneOtp(phone),
+    mutationFn: () => requestEmailOtp(email),
   });
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Verifica tu número</Text>
-      <Text style={styles.subtitle}>Ingresa el código de 6 dígitos que enviamos a {phone}.</Text>
+      <Text style={styles.heading}>Verifica tu correo</Text>
+      <Text style={styles.subtitle}>Ingresa el código de 6 dígitos que enviamos a {email}.</Text>
 
       <Controller
         control={control}
@@ -95,7 +92,6 @@ function OtpStep({ phone, onChangeNumber }: { phone: string; onChangeNumber: () 
             <TextInput
               style={styles.input}
               placeholder="Código de verificación"
-              autoComplete="sms-otp"
               keyboardType="number-pad"
               maxLength={6}
               value={field.value}
@@ -120,8 +116,8 @@ function OtpStep({ phone, onChangeNumber }: { phone: string; onChangeNumber: () 
         <Text style={styles.link}>{resendOtp.isPending ? 'Reenviando…' : 'Reenviar código'}</Text>
       </Pressable>
 
-      <Pressable onPress={onChangeNumber}>
-        <Text style={styles.link}>Cambiar número</Text>
+      <Pressable onPress={onChangeEmail}>
+        <Text style={styles.link}>Cambiar correo</Text>
       </Pressable>
     </View>
   );

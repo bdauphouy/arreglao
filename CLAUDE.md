@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   (holds payment, releases it, mediates disputes).
 
 None of this domain (annonces, applications, chat threads, transactions/escrow) is modeled yet.
-Phone + OTP auth and a bare `profiles` table are wired up (see Architecture below); posting,
+Email + OTP auth and a bare `profiles` table are wired up (see Architecture below); posting,
 applying, chat, and credits/monetization are still unbuilt.
 
 **Backend is decided: Supabase** (Postgres + Realtime + Auth), talked to directly from the client
@@ -50,7 +50,7 @@ MMKV is a native module, so **Expo Go will not work** — use the included `expo
 
 ## Architecture
 
-**Routing.** File-based routing via Expo Router under `app/`. Route groups: `(auth)` (phone + OTP
+**Routing.** File-based routing via Expo Router under `app/`. Route groups: `(auth)` (email + OTP
 sign-in flow — real Supabase Auth, not a stub) and `(tabs)` (signed-in tab navigator, not built
 yet). `app/index.tsx` does not redirect based on auth state yet — there's no auth-gated redirect
 wired up (deliberately out of scope for the auth-foundation ticket; a future ticket decides where
@@ -75,9 +75,9 @@ signed-in vs. signed-out users land).
 **Backend** (`src/lib/supabase.ts`): a single Supabase client instance, session-persisted across
 restarts. Schema lives in `supabase/migrations/` (SQL, checked in) and is applied via the Supabase
 CLI (`supabase db reset` locally; `supabase db push` or the dashboard for a hosted project) — there
-is no ORM and no client-side migration runner. `supabase/config.toml` configures local dev,
-including a fixed test phone/OTP pair (`auth.sms.test_otp`) so sign-in can be exercised locally
-without a real SMS provider.
+is no ORM and no client-side migration runner. `supabase/config.toml` configures local dev; email
+OTP delivery locally goes through the built-in Inbucket mail catcher (`local_smtp`, viewable at
+`http://127.0.0.1:54324`) so sign-in can be exercised without a real SMTP provider.
 
 **Env vars** (`src/lib/env.ts`): only `EXPO_PUBLIC_*`-prefixed vars are readable from client code
 (inlined at build time by Expo) — `supabaseUrl`, `supabaseAnonKey`, `sentryDsn`, `posthogApiKey`,

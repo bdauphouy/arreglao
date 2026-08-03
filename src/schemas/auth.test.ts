@@ -1,30 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
-import { otpSchema, phoneSchema } from './auth';
+import { emailSchema, otpSchema } from './auth';
 
-describe('phoneSchema', () => {
-  it('accepts a phone number in international format', () => {
-    const result = phoneSchema.safeParse({ phone: '+15555550100' });
+describe('emailSchema', () => {
+  it('accepts a valid email address', () => {
+    const result = emailSchema.safeParse({ email: 'user@example.com' });
     expect(result.success).toBe(true);
   });
 
-  it('rejects an empty phone number', () => {
-    const result = phoneSchema.safeParse({ phone: '' });
+  it('rejects an empty email', () => {
+    const result = emailSchema.safeParse({ email: '' });
     expect(result.success).toBe(false);
   });
 
-  it('rejects a phone number missing the leading +', () => {
-    const result = phoneSchema.safeParse({ phone: '15555550100' });
+  it('rejects an email missing the @', () => {
+    const result = emailSchema.safeParse({ email: 'userexample.com' });
     expect(result.success).toBe(false);
   });
 
-  it('rejects a phone number with letters', () => {
-    const result = phoneSchema.safeParse({ phone: '+1555555abcd' });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects a phone number that starts with a 0 after the country code', () => {
-    const result = phoneSchema.safeParse({ phone: '+0555550100' });
+  it('rejects an email missing a domain', () => {
+    const result = emailSchema.safeParse({ email: 'user@' });
     expect(result.success).toBe(false);
   });
 });
