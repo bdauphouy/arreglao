@@ -1,15 +1,13 @@
 import { z } from 'zod';
 
+import { jobCategorySchema } from './job-category';
+
 export const profileDetailsSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
 });
 
 export type ProfileDetailsInput = z.infer<typeof profileDetailsSchema>;
-
-export const jobCategorySchema = z.enum(['repairs', 'cleaning', 'moving', 'renovation', 'other']);
-
-export type JobCategory = z.infer<typeof jobCategorySchema>;
 
 export const profileEditSchema = z.object({
   displayName: z.string().min(1, 'El nombre es obligatorio'),

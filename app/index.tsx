@@ -28,12 +28,26 @@ export default function Index() {
     <View className="flex-1 items-center justify-center gap-4 bg-sand">
       <Text className="font-sans-extrabold text-xl text-ink-900">Arreglao</Text>
       {profileQuery.data ? (
-        <Pressable
-          className="rounded-full border border-olive-900 bg-white px-6 py-3"
-          onPress={() => router.push('/profile')}
-        >
-          <Text className="font-sans-semibold text-ink-900">Mi perfil</Text>
-        </Pressable>
+        <>
+          <Pressable
+            className="rounded-full bg-white px-6 py-3"
+            onPress={() => router.push('/profile')}
+          >
+            <Text className="font-sans-semibold text-ink-900">Mi perfil</Text>
+          </Pressable>
+          <Pressable
+            className="rounded-full bg-white px-6 py-3"
+            onPress={() => router.push('/annonces')}
+          >
+            <Text className="font-sans-semibold text-ink-900">Ver anuncios</Text>
+          </Pressable>
+          <Pressable
+            className="rounded-full bg-white px-6 py-3"
+            onPress={() => router.push('/annonces/new')}
+          >
+            <Text className="font-sans-semibold text-ink-900">Publicar anuncio</Text>
+          </Pressable>
+        </>
       ) : null}
       <Pressable
         className="rounded-full bg-accent px-6 py-3 active:bg-accent-active"

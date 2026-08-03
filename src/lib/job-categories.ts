@@ -1,4 +1,4 @@
-import type { JobCategory } from '../schemas/profile';
+import type { JobCategory } from '../schemas/job-category';
 
 export const JOB_CATEGORY_LABELS: Record<JobCategory, string> = {
   repairs: 'Reparaciones',

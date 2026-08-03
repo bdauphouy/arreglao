@@ -1,7 +1,7 @@
 import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '../lib/supabase';
-import type { JobCategory } from '../schemas/profile';
+import type { JobCategory } from '../schemas/job-category';
 
 export type { JobCategory };
 

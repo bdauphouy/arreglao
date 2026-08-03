@@ -1,7 +1,8 @@
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { JOB_CATEGORIES, JOB_CATEGORY_LABELS } from '../lib/job-categories';
-import type { JobCategory } from '../schemas/profile';
+import { Pill } from './pill';
+import type { JobCategory } from '../schemas/job-category';
 
 type CategoryTagPickerProps = {
   value: JobCategory[];
@@ -17,24 +18,11 @@ export function CategoryTagPicker({ value, onChange }: CategoryTagPickerProps) {
 
   return (
     <View className="flex-row flex-wrap gap-2">
-      {JOB_CATEGORIES.map((category) => {
-        const selected = value.includes(category);
-        return (
-          <Pressable
-            key={category}
-            onPress={() => toggle(category)}
-            className={`rounded-full border px-4 py-2 ${
-              selected ? 'border-accent bg-accent' : 'border-olive-200 bg-white'
-            }`}
-          >
-            <Text
-              className={`font-sans-medium text-sm ${selected ? 'text-ink-900' : 'text-olive-700'}`}
-            >
-              {JOB_CATEGORY_LABELS[category]}
-            </Text>
-          </Pressable>
-        );
-      })}
+      {JOB_CATEGORIES.map((category) => (
+        <Pill key={category} selected={value.includes(category)} onPress={() => toggle(category)}>
+          {JOB_CATEGORY_LABELS[category]}
+        </Pill>
+      ))}
     </View>
   );
 }

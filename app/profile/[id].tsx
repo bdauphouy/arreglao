@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
-import { AppleMaps } from 'expo-maps';
-import { Image, Platform, ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { displayNameFor, getProfile } from '../../src/api/profiles';
+import { LocationPreview } from '../../src/components/location-preview';
 import { JOB_CATEGORY_LABELS } from '../../src/lib/job-categories';
 
 export default function ProfileScreen() {
@@ -71,26 +71,10 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        {profile.location && Platform.OS === 'ios' ? (
+        {profile.location ? (
           <View className="gap-3">
             <Text className="font-sans-semibold text-sm text-olive-700">Ubicación</Text>
-            <View className="h-40 overflow-hidden rounded-md border border-olive-200">
-              <AppleMaps.View
-                style={{ flex: 1 }}
-                cameraPosition={{
-                  coordinates: { latitude: profile.location.lat, longitude: profile.location.lng },
-                  zoom: 12,
-                }}
-                markers={[
-                  {
-                    coordinates: {
-                      latitude: profile.location.lat,
-                      longitude: profile.location.lng,
-                    },
-                  },
-                ]}
-              />
-            </View>
+            <LocationPreview location={profile.location} />
           </View>
         ) : null}
       </ScrollView>

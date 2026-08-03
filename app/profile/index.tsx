@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getCurrentUserId } from '../../src/api/auth';
@@ -16,6 +16,7 @@ import {
 import { AvatarPicker } from '../../src/components/avatar-picker';
 import { CategoryTagPicker } from '../../src/components/category-tag-picker';
 import { LocationPicker } from '../../src/components/location-picker';
+import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { profileEditSchema, type ProfileEditInput } from '../../src/schemas/profile';
 
@@ -113,17 +114,11 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
             control={control}
             name="bio"
             render={({ field }) => (
-              <View className="h-28 rounded-md border border-olive-200 bg-white p-4">
-                <TextInput
-                  className="flex-1 font-sans text-base leading-tight text-ink-900"
-                  placeholder="Cuéntales a los demás en qué puedes ayudar"
-                  placeholderTextColor="#9C9877"
-                  multiline
-                  textAlignVertical="top"
-                  value={field.value}
-                  onChangeText={field.onChange}
-                />
-              </View>
+              <TextArea
+                placeholder="Cuéntales a los demás en qué puedes ayudar"
+                value={field.value}
+                onChangeText={field.onChange}
+              />
             )}
           />
         </View>
