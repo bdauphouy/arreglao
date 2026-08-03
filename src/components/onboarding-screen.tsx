@@ -4,6 +4,8 @@ import type { PropsWithChildren } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from './button';
+
 type OnboardingScreenProps = PropsWithChildren<{
   step: number;
   totalSteps: number;
@@ -61,12 +63,9 @@ export function OnboardingScreen({
       </View>
 
       <View className="px-6 pb-6">
-        <Pressable
-          className="items-center rounded-full bg-accent px-6 py-4 active:bg-accent-active"
-          onPress={onNext}
-        >
-          <Text className="font-sans-semibold text-base text-ink-900">{ctaLabel}</Text>
-        </Pressable>
+        <Button size="lg" onPress={onNext}>
+          {ctaLabel}
+        </Button>
       </View>
     </SafeAreaView>
   );

@@ -1,11 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createAnnonce } from '../../src/api/annonces';
 import { getCurrentUserId } from '../../src/api/auth';
+import { Button } from '../../src/components/button';
 import { CategoryPicker } from '../../src/components/category-picker';
 import { LocationPicker } from '../../src/components/location-picker';
 import { TextArea } from '../../src/components/text-area';
@@ -18,7 +19,7 @@ function FieldError({ message }: { message?: string }) {
   if (!message) {
     return null;
   }
-  return <Text className="font-sans text-xs text-red-700">{message}</Text>;
+  return <Text className="font-sans text-xs text-danger">{message}</Text>;
 }
 
 export default function NewAnnonceScreen() {
@@ -89,22 +90,20 @@ export default function NewAnnonceScreen() {
         </View>
 
         {createMutation.isError ? (
-          <Text className="font-sans text-xs text-red-700">
+          <Text className="font-sans text-xs text-danger">
             {createMutation.error instanceof Error
               ? createMutation.error.message
               : 'No se pudo publicar el anuncio. Inténtalo de nuevo.'}
           </Text>
         ) : null}
 
-        <Pressable
-          className="items-center rounded-full bg-accent px-6 py-4 active:bg-accent-active"
+        <Button
+          size="lg"
           onPress={() => createMutation.mutate()}
           disabled={createMutation.isPending}
         >
-          <Text className="font-sans-semibold text-base text-ink-900">
-            {createMutation.isPending ? 'Publicando…' : 'Publicar'}
-          </Text>
-        </Pressable>
+          {createMutation.isPending ? 'Publicando…' : 'Publicar'}
+        </Button>
       </ScrollView>
     </SafeAreaView>
   );

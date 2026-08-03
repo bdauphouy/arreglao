@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { listOpenAnnonces } from '../../src/api/annonces';
 import { getCurrentUserId } from '../../src/api/auth';
 import { getProfile } from '../../src/api/profiles';
+import { Card } from '../../src/components/card';
 import { Pill } from '../../src/components/pill';
 import { distanceKm } from '../../src/lib/distance';
 import { JOB_CATEGORIES, JOB_CATEGORY_LABELS } from '../../src/lib/job-categories';
@@ -80,15 +81,14 @@ export default function BrowseAnnoncesScreen() {
           )
         }
         renderItem={({ item }) => (
-          <Pressable
-            className="gap-1 rounded-md border border-olive-200 bg-white p-4"
-            onPress={() => router.push(`/annonces/${item.id}`)}
-          >
-            <Text className="font-sans-semibold text-base text-ink-900">{item.title}</Text>
-            <Text className="font-sans text-sm text-olive-600">
-              {JOB_CATEGORY_LABELS[item.category]}
-              {myLocation ? ` · ${distanceKm(myLocation, item.location).toFixed(1)} km` : ''}
-            </Text>
+          <Pressable onPress={() => router.push(`/annonces/${item.id}`)}>
+            <Card className="gap-1">
+              <Text className="font-sans-semibold text-base text-ink-900">{item.title}</Text>
+              <Text className="font-sans text-sm text-olive-600">
+                {JOB_CATEGORY_LABELS[item.category]}
+                {myLocation ? ` · ${distanceKm(myLocation, item.location).toFixed(1)} km` : ''}
+              </Text>
+            </Card>
           </Pressable>
         )}
       />

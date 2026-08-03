@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { displayNameFor, getProfile } from '../../src/api/profiles';
+import { Avatar } from '../../src/components/avatar';
+import { Badge } from '../../src/components/badge';
 import { LocationPreview } from '../../src/components/location-preview';
 import { JOB_CATEGORY_LABELS } from '../../src/lib/job-categories';
 
@@ -33,15 +35,11 @@ export default function ProfileScreen() {
     <SafeAreaView className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-6">
         <View className="items-center gap-3">
-          <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-olive-200 bg-white">
-            {profile.avatarUrl ? (
-              <Image source={{ uri: profile.avatarUrl }} className="h-24 w-24" />
-            ) : (
-              <Text className="font-sans-extrabold text-2xl text-olive-400">
-                {displayName.charAt(0).toUpperCase() || '?'}
-              </Text>
-            )}
-          </View>
+          <Avatar
+            src={profile.avatarUrl}
+            initials={displayName.charAt(0).toUpperCase() || '?'}
+            size={96}
+          />
           <Text className="font-sans-extrabold text-xl text-ink-900">
             {displayName || 'Sin nombre'}
           </Text>
@@ -59,14 +57,9 @@ export default function ProfileScreen() {
         {profile.categoryTags.length > 0 ? (
           <View className="flex-row flex-wrap gap-2">
             {profile.categoryTags.map((category) => (
-              <View
-                key={category}
-                className="rounded-full border border-olive-200 bg-white px-4 py-2"
-              >
-                <Text className="font-sans-medium text-sm text-olive-700">
-                  {JOB_CATEGORY_LABELS[category]}
-                </Text>
-              </View>
+              <Badge key={category} tone="neutral">
+                {JOB_CATEGORY_LABELS[category]}
+              </Badge>
             ))}
           </View>
         ) : null}

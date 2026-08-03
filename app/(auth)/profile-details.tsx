@@ -2,12 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { updateProfileName } from '../../src/api/profiles';
 import { supabase } from '../../src/lib/supabase';
 import { profileDetailsSchema, type ProfileDetailsInput } from '../../src/schemas/profile';
+import { Button } from '../../src/components/button';
 import { TextField } from '../../src/components/text-field';
 
 export default function ProfileDetailsScreen() {
@@ -53,7 +54,7 @@ export default function ProfileDetailsScreen() {
                   onChangeText={field.onChange}
                 />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-red-700">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
@@ -72,14 +73,14 @@ export default function ProfileDetailsScreen() {
                   onChangeText={field.onChange}
                 />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-red-700">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
           />
 
           {saveProfile.isError ? (
-            <Text className="font-sans text-xs text-red-700">
+            <Text className="font-sans text-xs text-danger">
               No se pudo guardar tu información. Inténtalo de nuevo.
             </Text>
           ) : null}
@@ -87,15 +88,13 @@ export default function ProfileDetailsScreen() {
       </View>
 
       <View className="px-6 pb-6">
-        <Pressable
-          className="items-center rounded-full bg-accent px-6 py-4 active:bg-accent-active"
+        <Button
+          size="lg"
           onPress={handleSubmit((data) => saveProfile.mutate(data))}
           disabled={saveProfile.isPending}
         >
-          <Text className="font-sans-semibold text-base text-ink-900">
-            {saveProfile.isPending ? 'Guardando…' : 'Continuar'}
-          </Text>
-        </Pressable>
+          {saveProfile.isPending ? 'Guardando…' : 'Continuar'}
+        </Button>
       </View>
     </SafeAreaView>
   );

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getCurrentUserId } from '../../src/api/auth';
@@ -14,6 +14,7 @@ import {
   type Profile,
 } from '../../src/api/profiles';
 import { AvatarPicker } from '../../src/components/avatar-picker';
+import { Button } from '../../src/components/button';
 import { CategoryTagPicker } from '../../src/components/category-tag-picker';
 import { LocationPicker } from '../../src/components/location-picker';
 import { TextArea } from '../../src/components/text-area';
@@ -101,7 +102,7 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
                   placeholder="Nombre visible"
                 />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-red-700">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
@@ -132,7 +133,7 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
               <>
                 <CategoryTagPicker value={field.value} onChange={field.onChange} />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-red-700">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
@@ -145,20 +146,18 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
         </View>
 
         {saveProfile.isError ? (
-          <Text className="font-sans text-xs text-red-700">
+          <Text className="font-sans text-xs text-danger">
             No se pudo guardar tu perfil. Inténtalo de nuevo.
           </Text>
         ) : null}
 
-        <Pressable
-          className="items-center rounded-full bg-accent px-6 py-4 active:bg-accent-active"
+        <Button
+          size="lg"
           onPress={handleSubmit((data) => saveProfile.mutate(data))}
           disabled={saveProfile.isPending}
         >
-          <Text className="font-sans-semibold text-base text-ink-900">
-            {saveProfile.isPending ? 'Guardando…' : 'Guardar'}
-          </Text>
-        </Pressable>
+          {saveProfile.isPending ? 'Guardando…' : 'Guardar'}
+        </Button>
       </ScrollView>
     </SafeAreaView>
   );

@@ -27,6 +27,12 @@ module.exports = {
           hover: '#C2DE3A',
           active: '#AEC92C',
         },
+        // Semantic tones from the Arreglao Design System (claude.ai/design
+        // project cfff0ed2-f48c-4a74-9db2-1c85f5e2ec96) — used by Badge.
+        success: { DEFAULT: '#3F8F5E', bg: '#E4F1E6' },
+        warning: { DEFAULT: '#B8791B', bg: '#FAEED8' },
+        danger: { DEFAULT: '#C1473B', bg: '#F8E6E3' },
+        info: { DEFAULT: '#3D6FA3', bg: '#E4EDF6' },
       },
       borderRadius: {
         sm: '8px',

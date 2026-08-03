@@ -3,12 +3,13 @@ import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { requestEmailOtp, verifyEmailOtp } from '../../src/api/auth';
 import { getProfile } from '../../src/api/profiles';
 import { emailSchema, otpSchema, type EmailInput, type OtpInput } from '../../src/schemas/auth';
+import { Button } from '../../src/components/button';
 import { OtpDigitsInput } from '../../src/components/otp-digits-input';
 import { TextField } from '../../src/components/text-field';
 
@@ -59,13 +60,13 @@ function EmailStep({ onCodeSent }: { onCodeSent: (email: string) => void }) {
                   onChangeText={field.onChange}
                 />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-red-700">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
           />
           {requestOtp.isError ? (
-            <Text className="font-sans text-xs text-red-700">
+            <Text className="font-sans text-xs text-danger">
               No se pudo enviar el código. Inténtalo de nuevo.
             </Text>
           ) : null}
@@ -73,15 +74,13 @@ function EmailStep({ onCodeSent }: { onCodeSent: (email: string) => void }) {
       </View>
 
       <View className="px-6 pb-6">
-        <Pressable
-          className="items-center rounded-full bg-accent px-6 py-4 active:bg-accent-active"
+        <Button
+          size="lg"
           onPress={handleSubmit((data) => requestOtp.mutate(data))}
           disabled={requestOtp.isPending}
         >
-          <Text className="font-sans-semibold text-base text-ink-900">
-            {requestOtp.isPending ? 'Enviando…' : 'Continuar'}
-          </Text>
-        </Pressable>
+          {requestOtp.isPending ? 'Enviando…' : 'Continuar'}
+        </Button>
       </View>
     </SafeAreaView>
   );
@@ -130,48 +129,45 @@ function OtpStep({ email, onChangeEmail }: { email: string; onChangeEmail: () =>
               <>
                 <OtpDigitsInput value={field.value} onChange={field.onChange} />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-red-700">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
           />
           {verifyOtp.isError ? (
-            <Text className="font-sans text-xs text-red-700">
+            <Text className="font-sans text-xs text-danger">
               {verifyOtp.error instanceof ProfileLookupError
                 ? 'Verificamos tu código, pero no pudimos cargar tu perfil. Inténtalo de nuevo.'
                 : 'Código inválido.'}
             </Text>
           ) : null}
           {resendOtp.isError ? (
-            <Text className="font-sans text-xs text-red-700">No se pudo reenviar el código.</Text>
+            <Text className="font-sans text-xs text-danger">No se pudo reenviar el código.</Text>
           ) : null}
         </View>
       </View>
 
       <View className="gap-3 px-6 pb-6">
-        <Pressable
-          className="items-center rounded-full bg-accent px-6 py-4 active:bg-accent-active"
+        <Button
+          size="lg"
           onPress={handleSubmit((data) => verifyOtp.mutate(data))}
           disabled={verifyOtp.isPending}
         >
-          <Text className="font-sans-semibold text-base text-ink-900">
-            {verifyOtp.isPending ? 'Ingresando…' : 'Ingresar'}
-          </Text>
-        </Pressable>
+          {verifyOtp.isPending ? 'Ingresando…' : 'Ingresar'}
+        </Button>
 
-        <Pressable
-          className="items-center rounded-full bg-white px-6 py-4"
+        <Button
+          variant="outline"
+          size="lg"
           onPress={() => resendOtp.mutate()}
           disabled={resendOtp.isPending}
         >
-          <Text className="font-sans-semibold text-base text-ink-900">
-            {resendOtp.isPending ? 'Reenviando…' : 'Reenviar código'}
-          </Text>
-        </Pressable>
+          {resendOtp.isPending ? 'Reenviando…' : 'Reenviar código'}
+        </Button>
 
-        <Pressable className="items-center rounded-full bg-white px-6 py-4" onPress={onChangeEmail}>
-          <Text className="font-sans-semibold text-base text-ink-900">Cambiar correo</Text>
-        </Pressable>
+        <Button variant="outline" size="lg" onPress={onChangeEmail}>
+          Cambiar correo
+        </Button>
       </View>
     </SafeAreaView>
   );
