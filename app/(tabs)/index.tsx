@@ -5,10 +5,9 @@ import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { listOpenAnnonces } from '../../src/api/annonces';
-import { getCurrentUserId } from '../../src/api/auth';
-import { getProfile } from '../../src/api/profiles';
 import { Card } from '../../src/components/card';
 import { Pill } from '../../src/components/pill';
+import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { distanceKm } from '../../src/lib/distance';
 import { JOB_CATEGORIES, JOB_CATEGORY_LABELS } from '../../src/lib/job-categories';
 import type { JobCategory } from '../../src/schemas/job-category';
@@ -17,13 +16,7 @@ export default function BrowseAnnoncesScreen() {
   const [category, setCategory] = useState<JobCategory | null>(null);
   const [sortByDistance, setSortByDistance] = useState(false);
 
-  const meQuery = useQuery({
-    queryKey: ['profile', 'me'],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      return userId ? getProfile(userId) : null;
-    },
-  });
+  const meQuery = useCurrentProfile();
 
   const annoncesQuery = useQuery({
     queryKey: ['annonces', 'open', category],

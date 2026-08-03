@@ -1,14 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getCurrentUserId } from '../../src/api/auth';
 import {
   displayNameFor,
-  getProfile,
   updateProfileDetails,
   uploadAvatar,
   type Profile,
@@ -19,19 +17,11 @@ import { CategoryTagPicker } from '../../src/components/category-tag-picker';
 import { LocationPicker } from '../../src/components/location-picker';
 import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
+import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { profileEditSchema, type ProfileEditInput } from '../../src/schemas/profile';
 
 export default function MyProfileScreen() {
-  const profileQuery = useQuery({
-    queryKey: ['profile', 'me'],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) {
-        throw new Error('No authenticated user');
-      }
-      return getProfile(userId);
-    },
-  });
+  const profileQuery = useCurrentProfile();
 
   if (!profileQuery.data) {
     return (

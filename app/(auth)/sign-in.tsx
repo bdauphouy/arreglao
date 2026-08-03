@@ -104,7 +104,7 @@ function OtpStep({ email, onChangeEmail }: { email: string; onChangeEmail: () =>
       }
     },
     onSuccess: (profile) => {
-      router.replace(profile.firstName ? '/' : '/(auth)/profile-details');
+      router.replace(profile.firstName ? '/(tabs)' : '/(auth)/profile-details');
     },
   });
   const resendOtp = useMutation({

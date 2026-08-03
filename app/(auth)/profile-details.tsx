@@ -27,7 +27,7 @@ export default function ProfileDetailsScreen() {
       }
       await updateProfileName(user.id, data);
     },
-    onSuccess: () => router.replace('/'),
+    onSuccess: () => router.replace('/(tabs)'),
   });
 
   return (

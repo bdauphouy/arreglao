@@ -4,13 +4,13 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { cancelAnnonce, getAnnonce, type Annonce } from '../../src/api/annonces';
-import { getCurrentUserId } from '../../src/api/auth';
 import { displayNameFor, getProfile } from '../../src/api/profiles';
 import { Avatar } from '../../src/components/avatar';
 import { Badge } from '../../src/components/badge';
 import { Button } from '../../src/components/button';
 import { Card } from '../../src/components/card';
 import { LocationPreview } from '../../src/components/location-preview';
+import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
 import { JOB_CATEGORY_LABELS } from '../../src/lib/job-categories';
 
@@ -44,10 +44,7 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
     queryFn: () => getProfile(annonce.posterId),
   });
 
-  const meQuery = useQuery({
-    queryKey: ['auth', 'currentUserId'],
-    queryFn: getCurrentUserId,
-  });
+  const meQuery = useCurrentProfile();
 
   const cancelMutation = useMutation({
     mutationFn: () => cancelAnnonce(annonce.id),
@@ -57,7 +54,7 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
     },
   });
 
-  const isOwner = meQuery.data === annonce.posterId;
+  const isOwner = meQuery.data?.id === annonce.posterId;
   const canCancel = isOwner && (annonce.status === 'open' || annonce.status === 'in_review');
 
   return (
