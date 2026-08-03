@@ -51,7 +51,7 @@ export function OtpDigitsInput({ length = 6, value, onChange }: OtpDigitsInputPr
           ref={(ref) => {
             inputRefs.current[index] = ref;
           }}
-          className="font-sans-semibold h-14 flex-1 rounded-md border border-olive-200 bg-white text-center text-lg leading-tight text-ink-900"
+          className="font-sans-semibold h-14 flex-1 rounded-full border border-olive-900 bg-white text-center text-lg leading-tight text-ink-900"
           autoFocus={index === 0}
           keyboardType="number-pad"
           textContentType="oneTimeCode"

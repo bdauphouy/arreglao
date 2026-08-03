@@ -54,7 +54,7 @@ export default function ProfileDetailsScreen() {
                   onChangeText={field.onChange}
                 />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-sm text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
@@ -73,14 +73,14 @@ export default function ProfileDetailsScreen() {
                   onChangeText={field.onChange}
                 />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-sm text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
           />
 
           {saveProfile.isError ? (
-            <Text className="font-sans text-xs text-danger">
+            <Text className="font-sans text-sm text-danger">
               No se pudo guardar tu información. Inténtalo de nuevo.
             </Text>
           ) : null}

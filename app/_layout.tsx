@@ -64,7 +64,9 @@ function RootLayout() {
       <SafeAreaProvider>
         <OptionalPostHogProvider>
           <QueryClientProvider client={queryClient}>
-            <Stack screenOptions={{ headerShown: false }} />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(onboarding)" options={{ animationTypeForReplace: 'pop' }} />
+            </Stack>
           </QueryClientProvider>
         </OptionalPostHogProvider>
       </SafeAreaProvider>

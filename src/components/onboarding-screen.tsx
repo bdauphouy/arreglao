@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import type { PropsWithChildren } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -13,6 +12,7 @@ type OnboardingScreenProps = PropsWithChildren<{
   subtitle: string;
   ctaLabel: string;
   onNext: () => void;
+  onBack?: () => void;
   onSkip?: () => void;
 }>;
 
@@ -23,19 +23,20 @@ export function OnboardingScreen({
   subtitle,
   ctaLabel,
   onNext,
+  onBack,
   onSkip,
   children,
 }: OnboardingScreenProps) {
   return (
     <SafeAreaView className="flex-1 bg-sand">
       <View className="flex-row items-center justify-between px-6 pt-2">
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={8}
-          className="h-8 w-8 items-center justify-center"
-        >
-          <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
-        </Pressable>
+        {onBack ? (
+          <Pressable onPress={onBack} hitSlop={8} className="h-8 w-8 items-center justify-center">
+            <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
+          </Pressable>
+        ) : (
+          <View className="h-8 w-8" />
+        )}
 
         <View className="flex-row gap-2">
           {Array.from({ length: totalSteps }).map((_, index) => (

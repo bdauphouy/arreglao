@@ -22,6 +22,13 @@ export default function HowItWorksScreen() {
       subtitle="Publica, revisa quién aplicó y elige. Tú decides."
       ctaLabel="Continuar"
       onNext={() => router.push('/(onboarding)/ready')}
+      onBack={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(onboarding)/welcome');
+        }
+      }}
       onSkip={skip}
     >
       <View className="w-full gap-3">

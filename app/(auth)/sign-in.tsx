@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { Text, View } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { requestEmailOtp, verifyEmailOtp } from '../../src/api/auth';
@@ -37,6 +38,22 @@ function EmailStep({ onCodeSent }: { onCodeSent: (email: string) => void }) {
 
   return (
     <SafeAreaView className="flex-1 bg-sand">
+      <View className="px-6 pt-2">
+        <Pressable
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(onboarding)/ready');
+            }
+          }}
+          hitSlop={8}
+          className="h-8 w-8 items-center justify-center"
+        >
+          <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
+        </Pressable>
+      </View>
+
       <View className="flex-1 justify-center gap-6 px-6">
         <View className="gap-3">
           <Text className="font-sans-extrabold text-3xl text-ink-900">Ingresa tu correo</Text>
@@ -60,13 +77,13 @@ function EmailStep({ onCodeSent }: { onCodeSent: (email: string) => void }) {
                   onChangeText={field.onChange}
                 />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-sm text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
           />
           {requestOtp.isError ? (
-            <Text className="font-sans text-xs text-danger">
+            <Text className="font-sans text-sm text-danger">
               No se pudo enviar el código. Inténtalo de nuevo.
             </Text>
           ) : null}
@@ -111,6 +128,16 @@ function OtpStep({ email, onChangeEmail }: { email: string; onChangeEmail: () =>
     mutationFn: () => requestEmailOtp(email),
   });
 
+  const token = useWatch({ control, name: 'token' });
+  const lastSubmittedToken = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (/^\d{6}$/.test(token) && lastSubmittedToken.current !== token) {
+      lastSubmittedToken.current = token;
+      verifyOtp.mutate({ token });
+    }
+  }, [token, verifyOtp]);
+
   return (
     <SafeAreaView className="flex-1 bg-sand">
       <View className="flex-1 justify-center gap-6 px-6">
@@ -129,20 +156,20 @@ function OtpStep({ email, onChangeEmail }: { email: string; onChangeEmail: () =>
               <>
                 <OtpDigitsInput value={field.value} onChange={field.onChange} />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-sm text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
           />
           {verifyOtp.isError ? (
-            <Text className="font-sans text-xs text-danger">
+            <Text className="font-sans text-sm text-danger">
               {verifyOtp.error instanceof ProfileLookupError
                 ? 'Verificamos tu código, pero no pudimos cargar tu perfil. Inténtalo de nuevo.'
                 : 'Código inválido.'}
             </Text>
           ) : null}
           {resendOtp.isError ? (
-            <Text className="font-sans text-xs text-danger">No se pudo reenviar el código.</Text>
+            <Text className="font-sans text-sm text-danger">No se pudo reenviar el código.</Text>
           ) : null}
         </View>
       </View>

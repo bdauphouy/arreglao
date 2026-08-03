@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { signOut } from '../../src/api/auth';
 import {
   displayNameFor,
   updateProfileDetails,
@@ -19,6 +21,7 @@ import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { profileEditSchema, type ProfileEditInput } from '../../src/schemas/profile';
+import { useAppStore } from '../../src/stores/app-store';
 
 export default function MyProfileScreen() {
   const profileQuery = useCurrentProfile();
@@ -63,6 +66,17 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
     },
   });
 
+  const resetOnboarding = useAppStore((state) => state.resetOnboarding);
+
+  const logoutMutation = useMutation({
+    mutationFn: signOut,
+    onSuccess: () => {
+      queryClient.setQueryData(['profile', 'me'], null);
+      resetOnboarding();
+      router.replace('/(onboarding)/welcome');
+    },
+  });
+
   return (
     <SafeAreaView className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-6">
@@ -92,7 +106,7 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
                   placeholder="Nombre visible"
                 />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-sm text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
@@ -123,7 +137,7 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
               <>
                 <CategoryTagPicker value={field.value} onChange={field.onChange} />
                 {fieldState.error ? (
-                  <Text className="font-sans text-xs text-danger">{fieldState.error.message}</Text>
+                  <Text className="font-sans text-sm text-danger">{fieldState.error.message}</Text>
                 ) : null}
               </>
             )}
@@ -136,7 +150,7 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
         </View>
 
         {saveProfile.isError ? (
-          <Text className="font-sans text-xs text-danger">
+          <Text className="font-sans text-sm text-danger">
             No se pudo guardar tu perfil. Inténtalo de nuevo.
           </Text>
         ) : null}
@@ -148,6 +162,21 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
         >
           {saveProfile.isPending ? 'Guardando…' : 'Guardar'}
         </Button>
+
+        <Button
+          variant="outline"
+          size="lg"
+          onPress={() => logoutMutation.mutate()}
+          disabled={logoutMutation.isPending}
+        >
+          {logoutMutation.isPending ? 'Cerrando sesión…' : 'Cerrar sesión'}
+        </Button>
+
+        {logoutMutation.isError ? (
+          <Text className="font-sans text-sm text-danger">
+            No se pudo cerrar sesión. Inténtalo de nuevo.
+          </Text>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

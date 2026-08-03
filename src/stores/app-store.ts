@@ -10,6 +10,7 @@ type AppState = {
   hasCompletedOnboarding: boolean;
   setTheme: (theme: Theme) => void;
   completeOnboarding: () => void;
+  resetOnboarding: () => void;
 };
 
 const mmkvStorage = {
@@ -27,6 +28,7 @@ export const useAppStore = create<AppState>()(
       hasCompletedOnboarding: false,
       setTheme: (theme) => set({ theme }),
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
+      resetOnboarding: () => set({ hasCompletedOnboarding: false }),
     }),
     {
       name: 'app-store',

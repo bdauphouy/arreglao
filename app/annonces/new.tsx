@@ -19,7 +19,7 @@ function FieldError({ message }: { message?: string }) {
   if (!message) {
     return null;
   }
-  return <Text className="font-sans text-xs text-danger">{message}</Text>;
+  return <Text className="font-sans text-sm text-danger">{message}</Text>;
 }
 
 export default function NewAnnonceScreen() {
@@ -90,7 +90,7 @@ export default function NewAnnonceScreen() {
         </View>
 
         {createMutation.isError ? (
-          <Text className="font-sans text-xs text-danger">
+          <Text className="font-sans text-sm text-danger">
             {createMutation.error instanceof Error
               ? createMutation.error.message
               : 'No se pudo publicar el anuncio. Inténtalo de nuevo.'}
