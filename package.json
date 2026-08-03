@@ -5,11 +5,13 @@
   "dependencies": {
     "@hookform/resolvers": "^5.6.0",
     "@sentry/react-native": "^8.21.0",
+    "@supabase/supabase-js": "^2.111.0",
     "@tanstack/react-query": "^5.101.4",
-    "drizzle-orm": "^0.45.2",
+    "aes-js": "^3.1.2",
     "expo": "~57.0.9",
     "expo-application": "^57.0.2",
     "expo-constants": "~57.0.8",
+    "expo-crypto": "~57.0.1",
     "expo-dev-client": "~57.0.10",
     "expo-device": "^57.0.1",
     "expo-file-system": "^57.0.1",
@@ -18,7 +20,6 @@
     "expo-router": "~57.0.9",
     "expo-secure-store": "~57.0.1",
     "expo-splash-screen": "~57.0.5",
-    "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "expo-updates": "~57.0.11",
     "nativewind": "^4.2.6",
@@ -28,7 +29,6 @@
     "react-hook-form": "^7.84.0",
     "react-native": "0.86.2",
     "react-native-css-interop": "0.2.6",
-    "react-native-get-random-values": "^2.0.0",
     "react-native-mmkv": "^4.3.2",
     "react-native-nitro-modules": "^0.36.5",
     "react-native-reanimated": "4.5.1",
@@ -40,18 +40,18 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@types/aes-js": "^3.1.4",
     "@types/node": "^26.1.2",
     "@types/react": "~19.2.2",
-    "babel-plugin-inline-import": "^3.0.0",
     "babel-preset-expo": "~57.0.5",
-    "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~57.0.1",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.5.14",
     "tailwindcss": "^3.4.19",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.10"
   },
   "scripts": {
     "start": "expo start",
@@ -62,16 +62,13 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "test": "vitest run"
   },
   "private": true,
   "expo": {
     "install": {
       "exclude": [
-        "@sentry/react-native",
-        "react-native-get-random-values"
+        "@sentry/react-native"
       ]
     }
   }

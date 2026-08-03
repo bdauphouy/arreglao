@@ -7,7 +7,6 @@ import { PostHogProvider } from 'posthog-react-native';
 import type { PropsWithChildren } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { DbProvider } from '../src/db/provider';
 import { env } from '../src/lib/env';
 import { queryClient } from '../src/lib/query-client';
 import { initSentry } from '../src/lib/sentry';
@@ -36,9 +35,7 @@ function RootLayout() {
       <SafeAreaProvider>
         <OptionalPostHogProvider>
           <QueryClientProvider client={queryClient}>
-            <DbProvider>
-              <Stack screenOptions={{ headerShown: false }} />
-            </DbProvider>
+            <Stack screenOptions={{ headerShown: false }} />
           </QueryClientProvider>
         </OptionalPostHogProvider>
       </SafeAreaProvider>

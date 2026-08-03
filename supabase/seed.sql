@@ -1,0 +1,2 @@
+-- Seed data for local development. Empty for now — tickets that introduce
+-- catalogs (e.g. credit_packages) add their seed rows here.
