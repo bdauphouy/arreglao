@@ -24,7 +24,7 @@ describe('profileEditSchema', () => {
     const result = profileEditSchema.safeParse({
       displayName: 'Ana Pérez',
       bio: 'Plomera con 5 años de experiencia.',
-      categoryTags: ['repairs', 'renovation'],
+      categoryTags: ['bricolaje', 'jardineria'],
     });
     expect(result.success).toBe(true);
   });
@@ -33,7 +33,7 @@ describe('profileEditSchema', () => {
     const result = profileEditSchema.safeParse({
       displayName: 'Ana Pérez',
       bio: '',
-      categoryTags: ['repairs'],
+      categoryTags: ['bricolaje'],
     });
     expect(result.success).toBe(true);
   });
@@ -42,7 +42,7 @@ describe('profileEditSchema', () => {
     const result = profileEditSchema.safeParse({
       displayName: '',
       bio: '',
-      categoryTags: ['repairs'],
+      categoryTags: ['bricolaje'],
     });
     expect(result.success).toBe(false);
   });

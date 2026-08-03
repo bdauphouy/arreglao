@@ -7,7 +7,7 @@ describe('annonceCreateSchema', () => {
     const result = annonceCreateSchema.safeParse({
       title: 'Reparar fuga de agua',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
-      category: 'repairs',
+      category: 'bricolaje',
       location: { lat: 14.6, lng: -90.5 },
     });
     expect(result.success).toBe(true);
@@ -17,7 +17,7 @@ describe('annonceCreateSchema', () => {
     const result = annonceCreateSchema.safeParse({
       title: '',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
-      category: 'repairs',
+      category: 'bricolaje',
       location: { lat: 14.6, lng: -90.5 },
     });
     expect(result.success).toBe(false);
@@ -27,7 +27,7 @@ describe('annonceCreateSchema', () => {
     const result = annonceCreateSchema.safeParse({
       title: 'Reparar fuga de agua',
       description: '',
-      category: 'repairs',
+      category: 'bricolaje',
       location: { lat: 14.6, lng: -90.5 },
     });
     expect(result.success).toBe(false);
@@ -47,7 +47,7 @@ describe('annonceCreateSchema', () => {
     const result = annonceCreateSchema.safeParse({
       title: 'Reparar fuga de agua',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
-      category: 'repairs',
+      category: 'bricolaje',
     });
     expect(result.success).toBe(false);
   });
