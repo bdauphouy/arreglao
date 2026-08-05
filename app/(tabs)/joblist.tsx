@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { AppleMaps } from 'expo-maps';
 import { Image as ExpoImage, type ImageRef } from 'expo-image';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image as RNImage, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -282,9 +283,31 @@ export default function JoblistScreen() {
     [clusters],
   );
 
+  const sortedAnnonces = useMemo(() => {
+    if (!myLocation) {
+      return annonces;
+    }
+    return annonces
+      .slice()
+      .sort((a, b) => distanceKm(myLocation, a.location) - distanceKm(myLocation, b.location));
+  }, [annonces, myLocation]);
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedAnnonce = annonces.find((annonce) => annonce.id === selectedId) ?? null;
   const selectedPoster = selectedAnnonce ? posterById.get(selectedAnnonce.posterId) : undefined;
+  const selectedIndex = selectedId ? sortedAnnonces.findIndex((annonce) => annonce.id === selectedId) : -1;
+
+  const selectNeighbor = (delta: 1 | -1) => {
+    if (selectedIndex === -1) {
+      return;
+    }
+    const nextIndex = selectedIndex + delta;
+    const nextAnnonce = sortedAnnonces[nextIndex];
+    if (!nextAnnonce) {
+      return;
+    }
+    setSelectedId(nextAnnonce.id);
+  };
 
   const annotations: AppleMaps.Annotation[] = clusters.map((cluster) => {
     if (cluster.annonces.length > 1) {
@@ -360,52 +383,76 @@ export default function JoblistScreen() {
           />
 
           {selectedAnnonce ? (
-            <View className="absolute inset-x-4 bottom-4 gap-2 rounded-md border border-olive-100 bg-white p-4 shadow-sm">
+            <View className="absolute inset-x-4 bottom-4 flex-row items-center gap-2">
               <Pressable
-                onPress={() => selectedPoster && router.push(`/profile/${selectedPoster.id}`)}
-                className="flex-row items-center gap-3"
+                onPress={() => selectNeighbor(-1)}
+                disabled={selectedIndex <= 0}
+                hitSlop={8}
+                className="h-9 w-9 items-center justify-center rounded-full border border-olive-100 bg-white shadow-sm"
+                style={{ opacity: selectedIndex <= 0 ? 0.35 : 1 }}
               >
-                <Avatar
-                  src={selectedPoster?.avatarUrl}
-                  initials={
-                    selectedPoster
-                      ? displayNameFor(selectedPoster).charAt(0).toUpperCase() || '?'
-                      : '?'
-                  }
-                  size={44}
-                />
-                <View className="flex-1">
-                  <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
-                    {selectedPoster ? displayNameFor(selectedPoster) : 'Cargando…'}
-                  </Text>
-                  {selectedPoster?.averageRating != null ? (
-                    <Text className="font-sans text-xs text-olive-600">
-                      ★ {selectedPoster.averageRating.toFixed(1)}
-                    </Text>
-                  ) : null}
-                </View>
-                <CategoryBadge category={selectedAnnonce.category} />
+                <ChevronLeft size={20} strokeWidth={1.75} color="#14170F" />
               </Pressable>
 
-              <Pressable onPress={() => router.push(`/annonces/${selectedAnnonce.id}`)} className="gap-1">
-                <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
-                  {selectedAnnonce.title}
-                </Text>
-                <Text numberOfLines={2} className="font-sans text-sm text-olive-700">
-                  {selectedAnnonce.description}
-                </Text>
-                <View className="flex-row items-center gap-2 pt-1">
-                  {selectedAnnonce.budgetMin != null && selectedAnnonce.budgetMax != null ? (
-                    <Text className="font-sans-semibold text-sm text-ink-900">
-                      L {selectedAnnonce.budgetMin} - L {selectedAnnonce.budgetMax}
+              <View className="flex-1 gap-2 rounded-md border border-olive-100 bg-white p-4 shadow-sm">
+                <Pressable
+                  onPress={() => selectedPoster && router.push(`/profile/${selectedPoster.id}`)}
+                  className="flex-row items-center gap-3"
+                >
+                  <Avatar
+                    src={selectedPoster?.avatarUrl}
+                    initials={
+                      selectedPoster
+                        ? displayNameFor(selectedPoster).charAt(0).toUpperCase() || '?'
+                        : '?'
+                    }
+                    size={44}
+                  />
+                  <View className="flex-1">
+                    <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
+                      {selectedPoster ? displayNameFor(selectedPoster) : 'Cargando…'}
                     </Text>
-                  ) : null}
-                  {myLocation ? (
-                    <Text className="font-sans text-xs text-olive-600">
-                      {distanceKm(myLocation, selectedAnnonce.location).toFixed(1)} km
-                    </Text>
-                  ) : null}
-                </View>
+                    {selectedPoster?.averageRating != null ? (
+                      <Text className="font-sans text-xs text-olive-600">
+                        ★ {selectedPoster.averageRating.toFixed(1)}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <CategoryBadge category={selectedAnnonce.category} />
+                </Pressable>
+
+                <Pressable onPress={() => router.push(`/annonces/${selectedAnnonce.id}`)} className="gap-1">
+                  <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
+                    {selectedAnnonce.title}
+                  </Text>
+                  <Text numberOfLines={2} className="font-sans text-sm text-olive-700">
+                    {selectedAnnonce.description}
+                  </Text>
+                  <View className="flex-row items-center gap-2 pt-1">
+                    {selectedAnnonce.budgetMin != null && selectedAnnonce.budgetMax != null ? (
+                      <Text className="font-sans-semibold text-sm text-ink-900">
+                        L {selectedAnnonce.budgetMin} - L {selectedAnnonce.budgetMax}
+                      </Text>
+                    ) : null}
+                    {myLocation ? (
+                      <Text className="font-sans text-xs text-olive-600">
+                        {distanceKm(myLocation, selectedAnnonce.location).toFixed(1)} km
+                      </Text>
+                    ) : null}
+                  </View>
+                </Pressable>
+              </View>
+
+              <Pressable
+                onPress={() => selectNeighbor(1)}
+                disabled={selectedIndex === -1 || selectedIndex >= sortedAnnonces.length - 1}
+                hitSlop={8}
+                className="h-9 w-9 items-center justify-center rounded-full border border-olive-100 bg-white shadow-sm"
+                style={{
+                  opacity: selectedIndex === -1 || selectedIndex >= sortedAnnonces.length - 1 ? 0.35 : 1,
+                }}
+              >
+                <ChevronRight size={20} strokeWidth={1.75} color="#14170F" />
               </Pressable>
             </View>
           ) : null}
