@@ -1,27 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { cancelAnnonce, getAnnonce, assignAnnonce, type Annonce } from '../../src/api/annonces';
-import {
-  applyToAnnonce,
-  hasApplied,
-  listApplicationsForAnnonce,
-  type Application,
-} from '../../src/api/applications';
+import { listApplicationsForAnnonce, type Application } from '../../src/api/applications';
 import { getOrCreateConversation } from '../../src/api/conversations';
 import { displayNameFor, getProfile, getProfiles, type Profile } from '../../src/api/profiles';
+import { ApplyForm } from '../../src/components/apply-form';
 import { Avatar } from '../../src/components/avatar';
 import { Badge } from '../../src/components/badge';
 import { Button } from '../../src/components/button';
 import { Card } from '../../src/components/card';
+import { CategoryBadge } from '../../src/components/category-badge';
 import { LocationPreview } from '../../src/components/location-preview';
-import { TextArea } from '../../src/components/text-area';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
-import { JOB_CATEGORY_LABELS } from '../../src/lib/job-categories';
 
 export default function AnnonceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -72,13 +66,18 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
       <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-6">
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <Badge tone="neutral">{JOB_CATEGORY_LABELS[annonce.category]}</Badge>
+            <CategoryBadge category={annonce.category} />
             <Badge tone={ANNONCE_STATUS_TONES[annonce.status]}>
               {ANNONCE_STATUS_LABELS[annonce.status]}
             </Badge>
           </View>
           <Text className="font-sans-extrabold text-2xl text-ink-900">{annonce.title}</Text>
           <Text className="font-sans text-base text-olive-700">{annonce.description}</Text>
+          {annonce.budgetMin != null && annonce.budgetMax != null ? (
+            <Text className="font-sans-semibold text-base text-ink-900">
+              Presupuesto: L {annonce.budgetMin} - L {annonce.budgetMax}
+            </Text>
+          ) : null}
         </View>
 
         <LocationPreview location={annonce.location} />
@@ -114,69 +113,10 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
         {isOwner ? (
           <ApplicantsSection annonce={annonce} />
         ) : meQuery.data && isAcceptingApplicants ? (
-          <ApplySection annonce={annonce} applicantId={meQuery.data.id} />
+          <ApplyForm annonce={annonce} applicantId={meQuery.data.id} />
         ) : null}
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function ApplySection({ annonce, applicantId }: { annonce: Annonce; applicantId: string }) {
-  const queryClient = useQueryClient();
-  const [expanded, setExpanded] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const hasAppliedQuery = useQuery({
-    queryKey: ['application', 'mine', annonce.id, applicantId],
-    queryFn: () => hasApplied(annonce.id, applicantId),
-  });
-
-  const applyMutation = useMutation({
-    mutationFn: () => applyToAnnonce(annonce.id, applicantId, message),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['application', 'mine', annonce.id] });
-      queryClient.invalidateQueries({ queryKey: ['annonce', annonce.id] });
-      queryClient.invalidateQueries({ queryKey: ['annonces'] });
-      setExpanded(false);
-      setMessage('');
-    },
-  });
-
-  if (hasAppliedQuery.data) {
-    return <Badge tone="success">Ya aplicaste</Badge>;
-  }
-
-  if (!expanded) {
-    return (
-      <Button onPress={() => setExpanded(true)} disabled={hasAppliedQuery.isLoading}>
-        Aplicar
-      </Button>
-    );
-  }
-
-  return (
-    <View className="gap-3">
-      <Text className="font-sans-semibold text-sm text-olive-700">
-        Cuéntale al anfitrión por qué eres una buena opción
-      </Text>
-      <TextArea placeholder="Escribe tu mensaje" value={message} onChangeText={setMessage} />
-      {applyMutation.isError ? (
-        <Text className="font-sans text-sm text-danger">
-          No se pudo enviar tu aplicación. Inténtalo de nuevo.
-        </Text>
-      ) : null}
-      <View className="flex-row gap-3">
-        <Button
-          onPress={() => applyMutation.mutate()}
-          disabled={applyMutation.isPending || message.trim().length === 0}
-        >
-          {applyMutation.isPending ? 'Enviando…' : 'Enviar aplicación'}
-        </Button>
-        <Button variant="ghost" onPress={() => setExpanded(false)}>
-          Cancelar
-        </Button>
-      </View>
-    </View>
   );
 }
 
@@ -295,10 +235,13 @@ function ApplicantCard({
             </Text>
           ) : null}
         </View>
+        <Text className="font-sans-bold text-base text-ink-900">L {application.proposedPrice}</Text>
         {isChosen ? <Badge tone="accent">Elegido</Badge> : null}
       </Pressable>
 
-      <Text className="font-sans text-sm text-olive-700">{application.message}</Text>
+      {application.message ? (
+        <Text className="font-sans text-sm text-olive-700">{application.message}</Text>
+      ) : null}
 
       <View className="flex-row gap-3">
         {canAssign && !isChosen ? (
