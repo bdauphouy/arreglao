@@ -6,12 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createAnnonce } from '../../src/api/annonces';
 import { getCurrentUserId } from '../../src/api/auth';
+import { BudgetRangeSlider } from '../../src/components/budget-range-slider';
 import { Button } from '../../src/components/button';
 import { CategoryPicker } from '../../src/components/category-picker';
-import { LocationPicker } from '../../src/components/location-picker';
 import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
-import type { Coordinates } from '../../src/lib/distance';
+import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { annonceCreateSchema } from '../../src/schemas/annonce';
 import type { JobCategory } from '../../src/schemas/job-category';
 
@@ -23,15 +23,24 @@ function FieldError({ message }: { message?: string }) {
 }
 
 export default function NewAnnonceScreen() {
+  const meQuery = useCurrentProfile();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<JobCategory | null>(null);
-  const [location, setLocation] = useState<Coordinates | null>(null);
+  const [budgetRange, setBudgetRange] = useState<[number, number]>([500, 1500]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const location = meQuery.data?.location ?? null;
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const result = annonceCreateSchema.safeParse({ title, description, category, location });
+      const result = annonceCreateSchema.safeParse({
+        title,
+        description,
+        category,
+        budgetMin: budgetRange[0],
+        budgetMax: budgetRange[1],
+      });
       if (!result.success) {
         const errors: Record<string, string> = {};
         for (const issue of result.error.issues) {
@@ -45,11 +54,15 @@ export default function NewAnnonceScreen() {
       }
       setFieldErrors({});
 
+      if (!location) {
+        throw new Error('Agrega tu dirección en tu perfil antes de publicar.');
+      }
+
       const userId = await getCurrentUserId();
       if (!userId) {
         throw new Error('No authenticated user');
       }
-      return createAnnonce(userId, result.data);
+      return createAnnonce(userId, result.data, location);
     },
     onSuccess: (annonce) => {
       router.replace(`/annonces/${annonce.id}`);
@@ -60,6 +73,20 @@ export default function NewAnnonceScreen() {
     <SafeAreaView className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-6">
         <Text className="font-sans-extrabold text-3xl text-ink-900">Publicar anuncio</Text>
+
+        {!meQuery.isLoading && !location ? (
+          <View className="gap-2 rounded-md border border-olive-200 bg-white p-4">
+            <Text className="font-sans-semibold text-sm text-ink-900">
+              Agrega tu dirección para poder publicar
+            </Text>
+            <Text className="font-sans text-sm text-olive-600">
+              Tus anuncios usan la dirección de tu perfil. Agrégala primero.
+            </Text>
+            <Button variant="outline" onPress={() => router.push('/account')}>
+              Ir a mi perfil
+            </Button>
+          </View>
+        ) : null}
 
         <View className="gap-3">
           <Text className="font-sans-semibold text-sm text-olive-700">Título</Text>
@@ -84,9 +111,11 @@ export default function NewAnnonceScreen() {
         </View>
 
         <View className="gap-3">
-          <Text className="font-sans-semibold text-sm text-olive-700">Ubicación</Text>
-          <LocationPicker value={location} onChange={setLocation} />
-          <FieldError message={fieldErrors.location} />
+          <Text className="font-sans-semibold text-sm text-olive-700">
+            Presupuesto (Lempiras)
+          </Text>
+          <BudgetRangeSlider min={50} max={5000} step={50} value={budgetRange} onChange={setBudgetRange} />
+          <FieldError message={fieldErrors.budgetMin ?? fieldErrors.budgetMax} />
         </View>
 
         {createMutation.isError ? (
@@ -100,7 +129,7 @@ export default function NewAnnonceScreen() {
         <Button
           size="lg"
           onPress={() => createMutation.mutate()}
-          disabled={createMutation.isPending}
+          disabled={createMutation.isPending || !location}
         >
           {createMutation.isPending ? 'Publicando…' : 'Publicar'}
         </Button>
