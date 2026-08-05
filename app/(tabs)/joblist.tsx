@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { AppleMaps } from 'expo-maps';
-import { useImage, Image as ExpoImage } from 'expo-image';
+import { Image as ExpoImage, type ImageRef } from 'expo-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image as RNImage, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { distanceKm } from '../../src/lib/distance';
 // elsewhere by mistake).
 const SAN_PEDRO_SULA_CAMERA = { coordinates: { latitude: 15.5049, longitude: -88.025 }, zoom: 12.5 };
 
-type ResolvedIcon = NonNullable<ReturnType<typeof useImage>>;
+type ResolvedIcon = ImageRef;
 
 type Cluster = {
   id: string;
@@ -66,37 +66,49 @@ function AvatarCircleLoader({
   onReady: (url: string, image: ResolvedIcon) => void;
 }) {
   const viewRef = useRef<View>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [captured, setCaptured] = useState<string | null>(null);
-  const image = useImage(captured ?? url, { maxWidth: 128, maxHeight: 128 });
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [laidOut, setLaidOut] = useState(false);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (!loaded || captured) {
+    if (!imageLoaded || !laidOut || done) {
       return;
     }
     let cancelled = false;
-    captureRef(viewRef, { format: 'png', result: 'tmpfile' })
-      .then((uri) => {
-        if (!cancelled) {
-          setCaptured(uri);
-        }
-      })
-      .catch(() => {});
+    let secondFrame: number | null = null;
+    // Wait two frames past layout+image-load before snapshotting: the
+    // borderRadius/overflow clip is applied via a native layer mask that
+    // commits a beat after layout, so capturing immediately can catch the
+    // view mid-render and yield an unclipped square — the exact same
+    // "capture fired too early" issue as ClusterBadgeLoader, just less
+    // total failure (a snapshot was still produced, only unclipped).
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        captureRef(viewRef, { format: 'png', result: 'tmpfile' })
+          .then((uri) => ExpoImage.loadAsync(uri, { maxWidth: 128, maxHeight: 128 }))
+          .then((image) => {
+            if (!cancelled) {
+              setDone(true);
+              onReady(url, image);
+            }
+          })
+          .catch(() => {});
+      });
+    });
     return () => {
       cancelled = true;
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame != null) {
+        cancelAnimationFrame(secondFrame);
+      }
     };
-  }, [loaded, captured]);
-
-  useEffect(() => {
-    if (image && captured) {
-      onReady(url, image);
-    }
-  }, [image, captured, url, onReady]);
+  }, [imageLoaded, laidOut, done, url, onReady]);
 
   return (
     <View
       ref={viewRef}
       collapsable={false}
+      onLayout={() => setLaidOut(true)}
       style={{
         position: 'absolute',
         top: -1000,
@@ -114,7 +126,7 @@ function AvatarCircleLoader({
         source={{ uri: url }}
         style={{ width: 64, height: 64 }}
         resizeMode="cover"
-        onLoadEnd={() => setLoaded(true)}
+        onLoadEnd={() => setImageLoaded(true)}
       />
     </View>
   );
