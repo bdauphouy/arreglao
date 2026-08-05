@@ -255,12 +255,23 @@ export default function JoblistScreen() {
   };
 
   const [region, setRegion] = useState<{ zoom: number; latitudeDelta: number } | null>(null);
+  const regionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (regionDebounceRef.current) {
+        clearTimeout(regionDebounceRef.current);
+      }
+    };
+  }, []);
 
   const clusters = useMemo(() => {
     // Roughly group pins that would overlap on screen: threshold shrinks as
     // the visible latitude span shrinks (i.e. as the user zooms in), so
-    // clusters split apart into their distinct profiles on zoom.
-    const latitudeDelta = region?.latitudeDelta ?? 0.35;
+    // clusters split apart into their distinct profiles on zoom. Rounded to
+    // the nearest 0.05° so tiny camera jitter (a couple pixels of drift
+    // during the initial fly-to animation) doesn't flip a point in and out
+    // of a cluster on every frame.
+    const latitudeDelta = Math.round((region?.latitudeDelta ?? 0.35) * 20) / 20;
     const thresholdKm = latitudeDelta * 111 * 0.07;
     return clusterAnnonces(annonces, thresholdKm);
   }, [annonces, region]);
@@ -319,7 +330,19 @@ export default function JoblistScreen() {
             style={{ flex: 1 }}
             cameraPosition={SAN_PEDRO_SULA_CAMERA}
             annotations={annotations}
-            onCameraMove={(event) => setRegion({ zoom: event.zoom, latitudeDelta: event.latitudeDelta })}
+            onCameraMove={(event) => {
+              // Debounced so clusters/badges only recompute once the camera
+              // is actually at rest — recomputing on every intermediate
+              // tick of a fly-to/pan animation was constantly reshuffling
+              // cluster groupings and remounting the badge loaders before
+              // their rasterize-to-PNG capture could finish.
+              if (regionDebounceRef.current) {
+                clearTimeout(regionDebounceRef.current);
+              }
+              regionDebounceRef.current = setTimeout(() => {
+                setRegion({ zoom: event.zoom, latitudeDelta: event.latitudeDelta });
+              }, 250);
+            }}
             onAnnotationClick={(annotation) => {
               const cluster = clusters.find((c) => c.id === annotation.id);
               if (!cluster) {
