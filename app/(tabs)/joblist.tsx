@@ -344,7 +344,7 @@ export default function JoblistScreen() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-sand">
+    <SafeAreaView className="flex-1 bg-sand" edges={['top', 'left', 'right']}>
       {avatarUrls.map((url) => (
         <AvatarCircleLoader key={url} url={url} onReady={handleAvatarIconReady} />
       ))}

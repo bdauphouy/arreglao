@@ -45,7 +45,7 @@ export default function MessagesScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-sand">
+    <SafeAreaView className="flex-1 bg-sand" edges={['top', 'left', 'right']}>
       <View className="px-6 pt-6">
         <Text className="font-sans-extrabold text-3xl text-ink-900">Mensajes</Text>
       </View>

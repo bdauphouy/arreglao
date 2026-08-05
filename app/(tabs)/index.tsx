@@ -67,7 +67,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-sand">
+    <SafeAreaView className="flex-1 bg-sand" edges={['top', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 pb-10 pt-6">
         <View className="gap-4 px-6">
           <View className="flex-row items-center gap-3">

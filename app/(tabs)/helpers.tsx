@@ -38,7 +38,7 @@ export default function HelpersScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-sand">
+    <SafeAreaView className="flex-1 bg-sand" edges={['top', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 pb-10 pt-6">
         <View className="gap-1 px-6">
           <Text className="font-sans-extrabold text-3xl text-ink-900">Ayudantes</Text>

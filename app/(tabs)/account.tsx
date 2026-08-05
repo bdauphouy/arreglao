@@ -30,7 +30,7 @@ export default function MyProfileScreen() {
 
   if (!profileQuery.data) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-sand">
+      <SafeAreaView className="flex-1 items-center justify-center bg-sand" edges={['top', 'left', 'right']}>
         <Text className="font-sans text-base text-olive-600">
           {profileQuery.isError ? 'No se pudo cargar tu perfil.' : 'Cargando…'}
         </Text>
@@ -80,7 +80,7 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-sand">
+    <SafeAreaView className="flex-1 bg-sand" edges={['top', 'left', 'right']}>
       <View className="px-6 pt-6">
         <IconButton onPress={() => router.back()}>
           <ArrowLeft color="#14170F" size={20} />
