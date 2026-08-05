@@ -45,19 +45,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-splash-screen',
     'expo-font',
     'expo-maps',
+    'expo-image',
     [
       'expo-image-picker',
       {
         photosPermission: 'Arreglao necesita acceso a tus fotos para elegir tu foto de perfil.',
-      },
-    ],
-    [
-      'expo-location',
-      {
-        locationWhenInUsePermission:
-          'Arreglao usa tu ubicación solo si tocas "Usar mi ubicación" al elegir un punto en el mapa.',
-        locationAlwaysAndWhenInUsePermission: false,
-        locationAlwaysPermission: false,
       },
     ],
     [
