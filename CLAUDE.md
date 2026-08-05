@@ -57,8 +57,9 @@ wired up (deliberately out of scope for the auth-foundation ticket; a future tic
 signed-in vs. signed-out users land).
 
 **Provider stack** (`app/_layout.tsx`), outside-in:
-`Sentry.wrap` → `ErrorBoundary` → `SafeAreaProvider` → `PostHogProvider` (only mounted if
-`EXPO_PUBLIC_POSTHOG_API_KEY` is set) → `QueryClientProvider` → `Stack`.
+`Sentry.wrap` → `ErrorBoundary` → `GestureHandlerRootView` → `SafeAreaProvider` →
+`PostHogProvider` (only mounted if `EXPO_PUBLIC_POSTHOG_API_KEY` is set) →
+`QueryClientProvider` → `BottomSheetModalProvider` → `Stack`.
 
 **Data/state has three distinct layers, used deliberately — don't blur them:**
 

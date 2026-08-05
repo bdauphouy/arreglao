@@ -1,15 +1,18 @@
 # Arreglao Design System
 
 ## What is Arreglao
+
 Arreglao is a home-services marketplace app. People who need a job done (repairs, cleaning, moving, small renovations…) publish an **annonce** (a listing/request) describing the work. Only people looking for help can publish — it's need-driven, not a catalog of standing service listings. Professionals and helpers browse open annonces and **apply**. The person who posted the annonce reviews applicants and **chooses** who does the work. Core loop: **Post → Apply → Choose → Get it done.**
 
 Primary surface: a mobile app (iOS-style). No web marketing site or codebase was provided in this pass.
 
 ## Sources
+
 - One reference image was uploaded: `uploads/b8d525c42c96270d0dfd2f2787bdea96.webp` — three mobile screens from an unrelated travel-guide app. **This is a mood/style reference only** (it is not Arreglao's own UI — different product, different copy). No Figma file, GitHub repo, or Arreglao product screenshots were provided.
 - Everything below (palette, type, components, UI kit copy) is originated from that visual mood plus the product description, since no existing Arreglao brand or codebase exists yet. Treat this as v1 — see the ask at the end.
 
 ## Content fundamentals
+
 - **Voice:** direct, practical, encouraging — like a helpful neighbor, not a corporate platform. Short sentences. Verbs first ("Post a job", "Choose your pro").
 - **Person:** speak to the user as "you"; the poster is "you", the professional is "you" when addressed directly. Refer to the two sides plainly as **the poster** and **the helper/pro** — avoid jargon like "requester" or "provider".
 - **Casing:** sentence case everywhere (buttons, headers, nav labels) — never title case, never all-caps except tiny eyebrow labels/badges.
@@ -22,6 +25,7 @@ Primary surface: a mobile app (iOS-style). No web marketing site or codebase was
   - Confirmation: "You picked Marco for this job. We'll let the other applicants know."
 
 ## Visual foundations
+
 - **Palette:** warm sand/off-white base (`--bg-page`) with an olive-tinted neutral scale (`--olive-*`) instead of cool grays — nods to the reference's outdoor, natural mood. One loud accent: a lime/chartreuse (`--accent`) used sparingly for primary actions, active states and highlight chips — never as a background wash. Deep near-black ink (`--ink-900`) doubles as body text color and as a dark surface for photo overlays and inverse cards.
 - **Type:** one family, Plus Jakarta Sans (Google Fonts nearest match — see note below) — geometric, rounded terminals, friendly but efficient. Bold/extrabold for display headlines, medium/semibold for UI labels, regular for body. Tight tracking on large display text, normal elsewhere.
 - **Backgrounds:** full-bleed photography is the default hero treatment (job/location photos), with dark gradient scrims for text legibility — never flat illustration or geometric patterns. No repeating textures.
@@ -37,15 +41,19 @@ Primary surface: a mobile app (iOS-style). No web marketing site or codebase was
 - **Layout:** single-column mobile-first screens, fixed bottom tab bar (3 items), fixed top status/location bar; content scrolls beneath both.
 
 ## Iconography
+
 No icon set or codebase was provided. Icons are sourced from **Lucide** (CDN, MIT-licensed, stroke-based — closest match to the reference app's thin-stroke line icons for search/heart/bell/nav) — this is a **flagged substitution**, not the brand's real icon set. Used at 20–24px, 1.5–1.75px stroke, no fill by default; filled/lime variant only for active/selected states (e.g. active tab icon, saved heart). No emoji, no unicode glyphs as icons.
 
 ## Fonts note
+
 No Arreglao font files were provided. **Plus Jakarta Sans** (Google Fonts) is used as the nearest match to the reference image's rounded geometric sans. Flagging this — if Arreglao has real brand font files, please share them and this will be swapped in `tokens/fonts.css`.
 
 ## Logo
+
 No Arreglao logo was provided. The brand name is rendered in plain type (Plus Jakarta Sans, extrabold) wherever a mark would normally sit. Do not draw a substitute mark — this system waits on a real logo.
 
 ## Components
+
 - **Core** (`components/core/`): Button, IconButton, Card, Badge, Tag, Avatar (intentional addition — see below)
 - **Forms** (`components/forms/`): Input, Select, Checkbox, Radio, Switch
 - **Feedback** (`components/feedback/`): Dialog, Toast, Tooltip
@@ -54,6 +62,7 @@ No Arreglao logo was provided. The brand name is rendered in plain type (Plus Ja
 No codebase or Figma defined a component inventory, so this is the standard set sized to Arreglao's needs (annonce browsing, applying, choosing). **Intentional addition:** Avatar — not in the reference image, added because poster/applicant identity is central to the product.
 
 ## Index
+
 - `styles.css` — root stylesheet entry (imports everything below)
 - `tokens/` — colors, typography, spacing/radii/shadows, fonts
 - `components/` — reusable UI primitives (see component cards in the Design System tab)
@@ -63,4 +72,5 @@ No codebase or Figma defined a component inventory, so this is the standard set 
 - `SKILL.md` — portable skill file for use elsewhere (e.g. Claude Code)
 
 ## Ask
+
 This is a v1 built from a single mood-reference image plus your product description — no existing Arreglao brand, codebase, or Figma was available. To get this to "perfect": please share (1) a real logo/wordmark if one exists, (2) real brand fonts if you have them, (3) any existing Arreglao screenshots or copy so tone/colors can be corrected against the real product, and (4) whether the target market is French- or Spanish-speaking (the word "annonce" reads French, "Arreglao" reads Spanish) so terminology matches.
