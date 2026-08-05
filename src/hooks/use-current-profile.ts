@@ -8,7 +8,10 @@ export function useCurrentProfile() {
     queryKey: ['profile', 'me'],
     queryFn: async () => {
       const userId = await getCurrentUserId();
-      return userId ? getProfile(userId) : null;
+      if (!userId) {
+        return null;
+      }
+      return getProfile(userId);
     },
   });
 }
