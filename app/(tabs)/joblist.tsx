@@ -339,7 +339,6 @@ export default function JoblistScreen() {
     return {
       id: annonce.id,
       coordinates: { latitude: annonce.location.lat, longitude: annonce.location.lng },
-      title: annonce.title,
       icon: icon ?? undefined,
     };
   });
