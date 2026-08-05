@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Send } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -92,9 +92,13 @@ export default function ConversationScreen() {
   return (
     <SafeAreaView className="flex-1 bg-sand">
       <View className="flex-row items-center gap-3 border-b border-olive-100 px-6 pb-4 pt-6">
-        <IconButton onPress={() => router.back()}>
-          <ArrowLeft color="#14170F" size={20} />
-        </IconButton>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          className="h-8 w-8 items-center justify-center"
+        >
+          <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
+        </Pressable>
         <Avatar
           src={otherProfileQuery.data?.avatarUrl}
           initials={otherName.charAt(0).toUpperCase() || '?'}

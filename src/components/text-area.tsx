@@ -10,7 +10,8 @@ export function TextArea({ className, ...props }: TextAreaProps) {
         placeholderTextColor="#9C9877"
         multiline
         textAlignVertical="top"
-        className={`flex-1 font-sans text-base leading-tight text-ink-900 ${className ?? ''}`}
+        style={{ includeFontPadding: false }}
+        className={`flex-1 p-0 font-sans text-base leading-tight text-ink-900 ${className ?? ''}`}
         {...props}
       />
     </View>

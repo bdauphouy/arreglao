@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { listOpenAnnonces } from '../../../src/api/annonces';
 import { Card } from '../../../src/components/card';
-import { IconButton } from '../../../src/components/icon-button';
 import { useCurrentProfile } from '../../../src/hooks/use-current-profile';
 import { distanceKm } from '../../../src/lib/distance';
 import { JOB_CATEGORY_LABELS } from '../../../src/lib/job-categories';
@@ -28,9 +27,13 @@ export default function CategoryAnnoncesScreen() {
   return (
     <SafeAreaView className="flex-1 bg-sand">
       <View className="flex-row items-center gap-3 px-6 pt-6">
-        <IconButton onPress={() => router.back()}>
-          <ArrowLeft color="#14170F" size={20} />
-        </IconButton>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          className="h-8 w-8 items-center justify-center"
+        >
+          <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
+        </Pressable>
         <Text className="font-sans-extrabold text-2xl text-ink-900">
           {parsed.success ? JOB_CATEGORY_LABELS[parsed.data] : 'Categoría'}
         </Text>
