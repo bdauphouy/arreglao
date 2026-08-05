@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { AppleMaps } from 'expo-maps';
-import { useImage } from 'expo-image';
+import { useImage, Image as ExpoImage } from 'expo-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image as RNImage, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -130,37 +130,50 @@ function ClusterBadgeLoader({
   onReady: (count: number, image: ResolvedIcon) => void;
 }) {
   const viewRef = useRef<View>(null);
-  const [captured, setCaptured] = useState<string | null>(null);
-  // placeholder source until captured is ready; never surfaced since onReady waits for `captured`
-  const image = useImage(captured ?? require('../../assets/icon.png'), { maxWidth: 128, maxHeight: 128 });
+  const [laidOut, setLaidOut] = useState(false);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (captured) {
+    if (!laidOut || done) {
       return;
     }
     let cancelled = false;
-    captureRef(viewRef, { format: 'png', result: 'tmpfile' })
-      .then((uri) => {
-        if (!cancelled) {
-          setCaptured(uri);
-        }
-      })
-      .catch(() => {});
+    let secondFrame: number | null = null;
+    // Wait two frames past layout before snapshotting: without any wait at
+    // all, captureRef fired before the offscreen view had completed a
+    // native layout pass and reliably failed (silently, via the catch
+    // below), which is why cluster badges never appeared at all. Loading
+    // the captured PNG imperatively (instead of through the useImage hook)
+    // also avoids the hook briefly keeping its previous resolved image
+    // around while the new one decodes — which was leaking a stale
+    // placeholder image onto the map as the badge icon.
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        captureRef(viewRef, { format: 'png', result: 'tmpfile' })
+          .then((uri) => ExpoImage.loadAsync(uri, { maxWidth: 128, maxHeight: 128 }))
+          .then((image) => {
+            if (!cancelled) {
+              setDone(true);
+              onReady(count, image);
+            }
+          })
+          .catch(() => {});
+      });
+    });
     return () => {
       cancelled = true;
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame != null) {
+        cancelAnimationFrame(secondFrame);
+      }
     };
-  }, [captured]);
-
-  useEffect(() => {
-    if (image && captured) {
-      onReady(count, image);
-    }
-  }, [image, captured, count, onReady]);
+  }, [laidOut, done, count, onReady]);
 
   return (
     <View
       ref={viewRef}
       collapsable={false}
+      onLayout={() => setLaidOut(true)}
       style={{
         position: 'absolute',
         top: -1000,
