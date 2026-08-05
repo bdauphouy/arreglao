@@ -22,7 +22,8 @@ describe('profileDetailsSchema', () => {
 describe('profileEditSchema', () => {
   it('accepts a valid profile edit', () => {
     const result = profileEditSchema.safeParse({
-      displayName: 'Ana Pérez',
+      firstName: 'Ana',
+      lastName: 'Pérez',
       bio: 'Plomera con 5 años de experiencia.',
       categoryTags: ['bricolaje', 'jardineria'],
     });
@@ -31,34 +32,38 @@ describe('profileEditSchema', () => {
 
   it('accepts an empty bio', () => {
     const result = profileEditSchema.safeParse({
-      displayName: 'Ana Pérez',
+      firstName: 'Ana',
+      lastName: 'Pérez',
       bio: '',
       categoryTags: ['bricolaje'],
     });
     expect(result.success).toBe(true);
   });
 
-  it('rejects an empty display name', () => {
+  it('rejects an empty first name', () => {
     const result = profileEditSchema.safeParse({
-      displayName: '',
+      firstName: '',
+      lastName: 'Pérez',
       bio: '',
       categoryTags: ['bricolaje'],
     });
     expect(result.success).toBe(false);
   });
 
-  it('rejects no category tags selected', () => {
+  it('accepts no category tags selected', () => {
     const result = profileEditSchema.safeParse({
-      displayName: 'Ana Pérez',
+      firstName: 'Ana',
+      lastName: 'Pérez',
       bio: '',
       categoryTags: [],
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('rejects an invalid category tag', () => {
     const result = profileEditSchema.safeParse({
-      displayName: 'Ana Pérez',
+      firstName: 'Ana',
+      lastName: 'Pérez',
       bio: '',
       categoryTags: ['plumbing'],
     });

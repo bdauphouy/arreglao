@@ -10,48 +10,78 @@ export type Profile = {
   email: string | null;
   firstName: string | null;
   lastName: string | null;
-  displayName: string | null;
   avatarUrl: string | null;
   bio: string | null;
   location: { lat: number; lng: number } | null;
+  addressLabel: string | null;
   categoryTags: JobCategory[];
   averageRating: number | null;
+  reviewCount: number;
+  isTopProvider: boolean;
+  experienceYears: number | null;
+  certification: string | null;
+  equipmentTags: string[];
+  commitmentTags: string[];
+  serviceRadiusKm: number | null;
+  identityVerified: boolean;
+  phoneVerified: boolean;
+  createdAt: string;
 };
 
 export function displayNameFor(profile: Profile): string {
-  return profile.displayName ?? `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim();
+  return `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim();
 }
 
 const PROFILE_COLUMNS =
-  'id, email, first_name, last_name, display_name, avatar_url, bio, location_lat, location_lng, category_tags, average_rating';
+  'id, email, first_name, last_name, avatar_url, bio, location_lat, location_lng, address_label, category_tags, average_rating, review_count, is_top_provider, experience_years, certification, equipment_tags, commitment_tags, service_radius_km, identity_verified, phone_verified, created_at';
 
 function toProfile(row: {
   id: string;
   email: string | null;
   first_name: string | null;
   last_name: string | null;
-  display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
   location_lat: number | null;
   location_lng: number | null;
+  address_label: string | null;
   category_tags: JobCategory[] | null;
   average_rating: number | null;
+  review_count: number;
+  is_top_provider: boolean;
+  experience_years: number | null;
+  certification: string | null;
+  equipment_tags: string[] | null;
+  commitment_tags: string[] | null;
+  service_radius_km: number | null;
+  identity_verified: boolean;
+  phone_verified: boolean;
+  created_at: string;
 }): Profile {
   return {
     id: row.id,
     email: row.email,
     firstName: row.first_name,
     lastName: row.last_name,
-    displayName: row.display_name,
     avatarUrl: row.avatar_url,
     bio: row.bio,
     location:
       row.location_lat != null && row.location_lng != null
         ? { lat: row.location_lat, lng: row.location_lng }
         : null,
+    addressLabel: row.address_label,
     categoryTags: row.category_tags ?? [],
     averageRating: row.average_rating,
+    reviewCount: row.review_count,
+    isTopProvider: row.is_top_provider,
+    experienceYears: row.experience_years,
+    certification: row.certification,
+    equipmentTags: row.equipment_tags ?? [],
+    commitmentTags: row.commitment_tags ?? [],
+    serviceRadiusKm: row.service_radius_km,
+    identityVerified: row.identity_verified,
+    phoneVerified: row.phone_verified,
+    createdAt: row.created_at,
   };
 }
 
@@ -101,10 +131,12 @@ export async function updateProfileName(
 }
 
 export type ProfileDetailsUpdate = {
-  displayName: string;
+  firstName: string;
+  lastName: string;
   bio: string;
   categoryTags: JobCategory[];
   location: { lat: number; lng: number } | null;
+  addressLabel: string | null;
 };
 
 export async function updateProfileDetails(
@@ -114,11 +146,13 @@ export async function updateProfileDetails(
   const { error } = await supabase
     .from('profiles')
     .update({
-      display_name: input.displayName,
+      first_name: input.firstName,
+      last_name: input.lastName,
       bio: input.bio,
       category_tags: input.categoryTags,
       location_lat: input.location?.lat ?? null,
       location_lng: input.location?.lng ?? null,
+      address_label: input.addressLabel,
     })
     .eq('id', userId);
   if (error) {

@@ -10,9 +10,10 @@ export const profileDetailsSchema = z.object({
 export type ProfileDetailsInput = z.infer<typeof profileDetailsSchema>;
 
 export const profileEditSchema = z.object({
-  displayName: z.string().min(1, 'El nombre es obligatorio'),
+  firstName: z.string().min(1, 'El nombre es obligatorio'),
+  lastName: z.string().min(1, 'El apellido es obligatorio'),
   bio: z.string(),
-  categoryTags: z.array(jobCategorySchema).min(1, 'Selecciona al menos una categoría'),
+  categoryTags: z.array(jobCategorySchema),
 });
 
 export type ProfileEditInput = z.infer<typeof profileEditSchema>;

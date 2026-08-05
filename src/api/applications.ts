@@ -5,16 +5,18 @@ export type Application = {
   annonceId: string;
   applicantId: string;
   message: string;
+  proposedPrice: number;
   createdAt: string;
 };
 
-const APPLICATION_COLUMNS = 'id, annonce_id, applicant_id, message, created_at';
+const APPLICATION_COLUMNS = 'id, annonce_id, applicant_id, message, proposed_price, created_at';
 
 function toApplication(row: {
   id: string;
   annonce_id: string;
   applicant_id: string;
   message: string;
+  proposed_price: number;
   created_at: string;
 }): Application {
   return {
@@ -22,6 +24,7 @@ function toApplication(row: {
     annonceId: row.annonce_id,
     applicantId: row.applicant_id,
     message: row.message,
+    proposedPrice: row.proposed_price,
     createdAt: row.created_at,
   };
 }
@@ -30,10 +33,11 @@ export async function applyToAnnonce(
   annonceId: string,
   applicantId: string,
   message: string,
+  proposedPrice: number,
 ): Promise<Application> {
   const { data, error } = await supabase
     .from('applications')
-    .insert({ annonce_id: annonceId, applicant_id: applicantId, message })
+    .insert({ annonce_id: annonceId, applicant_id: applicantId, message, proposed_price: proposedPrice })
     .select(APPLICATION_COLUMNS)
     .single();
   if (error) {
@@ -48,6 +52,18 @@ export async function listApplicationsForAnnonce(annonceId: string): Promise<App
     .select(APPLICATION_COLUMNS)
     .eq('annonce_id', annonceId)
     .order('created_at', { ascending: true });
+  if (error) {
+    throw error;
+  }
+  return data.map(toApplication);
+}
+
+export async function listApplicationsForApplicant(applicantId: string): Promise<Application[]> {
+  const { data, error } = await supabase
+    .from('applications')
+    .select(APPLICATION_COLUMNS)
+    .eq('applicant_id', applicantId)
+    .order('created_at', { ascending: false });
   if (error) {
     throw error;
   }
