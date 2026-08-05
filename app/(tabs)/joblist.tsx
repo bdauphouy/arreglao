@@ -19,6 +19,12 @@ import { distanceKm } from '../../src/lib/distance';
 // elsewhere by mistake).
 const SAN_PEDRO_SULA_CAMERA = { coordinates: { latitude: 15.5049, longitude: -88.025 }, zoom: 12.5 };
 
+// Fixed zoom level used whenever a single profile becomes selected — by tap
+// or by stepping through the prev/next arrows — instead of "current zoom +
+// 2", so browsing several profiles in a row settles on a stable, readable
+// level rather than zooming in further with every step.
+const PROFILE_ZOOM = SAN_PEDRO_SULA_CAMERA.zoom + 2;
+
 type ResolvedIcon = ImageRef;
 
 type Cluster = {
@@ -297,6 +303,13 @@ export default function JoblistScreen() {
   const selectedPoster = selectedAnnonce ? posterById.get(selectedAnnonce.posterId) : undefined;
   const selectedIndex = selectedId ? sortedAnnonces.findIndex((annonce) => annonce.id === selectedId) : -1;
 
+  const focusAnnonce = (annonce: Annonce) => {
+    mapRef.current?.setCameraPosition({
+      coordinates: { latitude: annonce.location.lat, longitude: annonce.location.lng },
+      zoom: PROFILE_ZOOM,
+    });
+  };
+
   const selectNeighbor = (delta: 1 | -1) => {
     if (selectedIndex === -1) {
       return;
@@ -307,6 +320,7 @@ export default function JoblistScreen() {
       return;
     }
     setSelectedId(nextAnnonce.id);
+    focusAnnonce(nextAnnonce);
   };
 
   const annotations: AppleMaps.Annotation[] = clusters.map((cluster) => {
@@ -378,7 +392,9 @@ export default function JoblistScreen() {
                 });
                 return;
               }
-              setSelectedId(cluster.annonces[0].id);
+              const annonce = cluster.annonces[0];
+              setSelectedId(annonce.id);
+              focusAnnonce(annonce);
             }}
           />
 
