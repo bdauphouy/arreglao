@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 
 import type { Annonce } from '../api/annonces';
 import { applyToAnnonce, hasApplied, listApplicationsForAnnonce } from '../api/applications';
+import { isWithdrawn } from '../lib/application-status';
 import { suggestedApplicationPrice } from '../lib/pricing';
 import { Badge } from './badge';
 import { Button } from './button';
@@ -34,7 +35,7 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
   });
 
   const otherPrices = (applicationsQuery.data ?? [])
-    .filter((application) => application.status !== 'withdrawn')
+    .filter((application) => !isWithdrawn(application.status))
     .map((application) => application.proposedPrice)
     .sort((a, b) => a - b);
 

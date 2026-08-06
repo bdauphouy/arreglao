@@ -45,7 +45,12 @@ export async function applyToAnnonce(
 ): Promise<Application> {
   const { data, error } = await supabase
     .from('applications')
-    .insert({ annonce_id: annonceId, applicant_id: applicantId, message, proposed_price: proposedPrice })
+    .insert({
+      annonce_id: annonceId,
+      applicant_id: applicantId,
+      message,
+      proposed_price: proposedPrice,
+    })
     .select(APPLICATION_COLUMNS)
     .single();
   if (error) {
@@ -99,6 +104,9 @@ export async function listApplicationsForApplicant(applicantId: string): Promise
   return data.map(toApplication);
 }
 
+// A withdrawn-then-reapplied annonce/applicant pair can have more than one
+// row (see the applications_active_unique_idx migration) — order+limit to
+// the most recent one instead of assuming a singleton.
 export async function getApplication(
   annonceId: string,
   applicantId: string,
@@ -108,6 +116,8 @@ export async function getApplication(
     .select(APPLICATION_COLUMNS)
     .eq('annonce_id', annonceId)
     .eq('applicant_id', applicantId)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (error) {
     throw error;
@@ -115,12 +125,15 @@ export async function getApplication(
   return data ? toApplication(data) : null;
 }
 
+// Excludes withdrawn rows so withdrawing reads as "no longer applied"
+// rather than a permanent block on applying again.
 export async function hasApplied(annonceId: string, applicantId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from('applications')
     .select('id')
     .eq('annonce_id', annonceId)
     .eq('applicant_id', applicantId)
+    .neq('status', 'withdrawn')
     .maybeSingle();
   if (error) {
     throw error;

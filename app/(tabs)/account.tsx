@@ -47,6 +47,7 @@ import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
 import {
   APPLICATION_STATUS_LABELS,
+  isWithdrawn,
   type ApplicationStatus,
 } from '../../src/lib/application-status';
 import { formatMemberSince, relativeTimeFromNow } from '../../src/lib/relative-time';
@@ -244,13 +245,10 @@ function EmptyState({ label }: { label: string }) {
 }
 
 // Display order for the Postulaciones groups — still-open first, then how
-// each one was resolved.
-const APPLICATION_STATUS_ORDER: ApplicationStatus[] = [
-  'pending',
-  'accepted',
-  'rejected',
-  'withdrawn',
-];
+// each one was resolved. Withdrawn applications aren't listed here: once
+// withdrawn, an application isn't a dead/canceled outcome to show a history
+// of — it just means the user isn't currently applied (#41).
+const APPLICATION_STATUS_ORDER: ApplicationStatus[] = ['pending', 'accepted', 'rejected'];
 
 function AppliedList({ applicantId }: { applicantId: string }) {
   const queryClient = useQueryClient();
@@ -260,7 +258,13 @@ function AppliedList({ applicantId }: { applicantId: string }) {
     queryFn: () => listApplicationsForApplicant(applicantId),
   });
 
-  const applications = applicationsQuery.data ?? [];
+  // Withdrawn applications aren't shown here at all (see
+  // APPLICATION_STATUS_ORDER above) — filter them out up front so a user
+  // whose only applications are withdrawn ones sees the empty state below
+  // instead of a blank scroll view.
+  const applications = (applicationsQuery.data ?? []).filter(
+    (application) => !isWithdrawn(application.status),
+  );
   const annonceIds = applications.map((application) => application.annonceId);
 
   const annoncesQuery = useQuery({
@@ -271,9 +275,16 @@ function AppliedList({ applicantId }: { applicantId: string }) {
   const annonceById = new Map((annoncesQuery.data ?? []).map((annonce) => [annonce.id, annonce]));
 
   const withdrawMutation = useMutation({
-    mutationFn: (applicationId: string) => withdrawApplication(applicationId),
-    onSuccess: () => {
+    mutationFn: ({ applicationId }: { applicationId: string; annonceId: string }) =>
+      withdrawApplication(applicationId),
+    onSuccess: (_data, { annonceId }) => {
       queryClient.invalidateQueries({ queryKey: ['applications', 'mine', applicantId] });
+      // ApplyForm's "Ya aplicaste" gate (hasApplied) and other-applicants'
+      // price list both key off these — without invalidating them, tapping
+      // back into the annonce right after withdrawing could still show a
+      // stale "already applied" state.
+      queryClient.invalidateQueries({ queryKey: ['applications', annonceId] });
+      queryClient.invalidateQueries({ queryKey: ['application', 'mine', annonceId] });
       queryClient.invalidateQueries({ queryKey: ['annonces'] });
     },
   });
@@ -313,10 +324,17 @@ function AppliedList({ applicantId }: { applicantId: string }) {
                     application={application}
                     annonce={annonce}
                     onWithdraw={
-                      canWithdraw ? () => withdrawMutation.mutate(application.id) : undefined
+                      canWithdraw
+                        ? () =>
+                            withdrawMutation.mutate({
+                              applicationId: application.id,
+                              annonceId: application.annonceId,
+                            })
+                        : undefined
                     }
                     withdrawing={
-                      withdrawMutation.isPending && withdrawMutation.variables === application.id
+                      withdrawMutation.isPending &&
+                      withdrawMutation.variables?.applicationId === application.id
                     }
                   />
                 );

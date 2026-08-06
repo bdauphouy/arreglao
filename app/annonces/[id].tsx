@@ -22,7 +22,11 @@ import { CategoryBadge } from '../../src/components/category-badge';
 import { LocationPreview } from '../../src/components/location-preview';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
-import { APPLICATION_STATUS_LABELS, APPLICATION_STATUS_TONES } from '../../src/lib/application-status';
+import {
+  APPLICATION_STATUS_LABELS,
+  APPLICATION_STATUS_TONES,
+  isWithdrawn,
+} from '../../src/lib/application-status';
 
 export default function AnnonceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -177,7 +181,7 @@ function ApplicantsSection({ annonce }: { annonce: Annonce }) {
   // "N aplicantes" semantics as annonce.applicationsCount, which already
   // excludes them (see refresh_annonce_applications_count).
   const applications = (applicationsQuery.data ?? []).filter(
-    (application) => application.status !== 'withdrawn',
+    (application) => !isWithdrawn(application.status),
   );
 
   if (applications.length === 0) {
