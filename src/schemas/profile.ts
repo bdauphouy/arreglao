@@ -14,6 +14,7 @@ export const profileEditSchema = z.object({
   lastName: z.string().min(1, 'El apellido es obligatorio'),
   bio: z.string(),
   categoryTags: z.array(jobCategorySchema),
+  isAvailable: z.boolean(),
 });
 
 export type ProfileEditInput = z.infer<typeof profileEditSchema>;

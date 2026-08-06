@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Bookmark,
   ChevronRight,
+  Eye,
   LogOut,
   Megaphone,
   Send,
@@ -23,7 +24,12 @@ import {
   type Application,
 } from '../../src/api/applications';
 import { signOut } from '../../src/api/auth';
-import { displayNameFor, updateProfileDetails, uploadAvatar, type Profile } from '../../src/api/profiles';
+import {
+  displayNameFor,
+  updateProfileDetails,
+  uploadAvatar,
+  type Profile,
+} from '../../src/api/profiles';
 import { listSavedAnnonceIds, unsaveAnnonce } from '../../src/api/saved-annonces';
 import type { Address } from '../../src/components/address-autocomplete';
 import { AddressAutocomplete } from '../../src/components/address-autocomplete';
@@ -34,6 +40,7 @@ import { Button } from '../../src/components/button';
 import { Card } from '../../src/components/card';
 import { CategoryBadge } from '../../src/components/category-badge';
 import { CategoryTagPicker } from '../../src/components/category-tag-picker';
+import { Switch } from '../../src/components/switch';
 import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
@@ -42,7 +49,7 @@ import {
   APPLICATION_STATUS_LABELS,
   type ApplicationStatus,
 } from '../../src/lib/application-status';
-import { relativeTimeFromNow } from '../../src/lib/relative-time';
+import { formatMemberSince, relativeTimeFromNow } from '../../src/lib/relative-time';
 import { profileEditSchema, type ProfileEditInput } from '../../src/schemas/profile';
 import { useAppStore } from '../../src/stores/app-store';
 
@@ -73,7 +80,10 @@ export default function MyProfileScreen() {
 
   if (!profileQuery.data) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-sand" edges={['top', 'left', 'right']}>
+      <SafeAreaView
+        className="flex-1 items-center justify-center bg-sand"
+        edges={['top', 'left', 'right']}
+      >
         <Text className="font-sans text-base text-olive-600">
           {profileQuery.isError ? 'No se pudo cargar tu perfil.' : 'Cargando…'}
         </Text>
@@ -140,6 +150,9 @@ function ProfileMenu({
           <Text className="font-sans-semibold text-lg text-ink-900">
             {displayNameFor(profile) || 'Sin nombre'}
           </Text>
+          <Text className="font-sans text-sm text-olive-600">
+            {formatMemberSince(profile.createdAt)}
+          </Text>
           {profile.averageRating != null ? (
             <Text className="font-sans text-sm text-olive-600">
               Calificación: {profile.averageRating.toFixed(1)}
@@ -156,6 +169,12 @@ function ProfileMenu({
         <MenuRow icon={Send} label="Postulaciones" onPress={() => onNavigate('applied')} />
         <MenuDivider />
         <MenuRow icon={Bookmark} label="Guardados" onPress={() => onNavigate('saved')} />
+        <MenuDivider />
+        <MenuRow
+          icon={Eye}
+          label="Ver mi perfil público"
+          onPress={() => router.push(`/profile/${profile.id}`)}
+        />
       </View>
 
       <View className="gap-2">
@@ -297,8 +316,7 @@ function AppliedList({ applicantId }: { applicantId: string }) {
                       canWithdraw ? () => withdrawMutation.mutate(application.id) : undefined
                     }
                     withdrawing={
-                      withdrawMutation.isPending &&
-                      withdrawMutation.variables === application.id
+                      withdrawMutation.isPending && withdrawMutation.variables === application.id
                     }
                   />
                 );
@@ -512,6 +530,7 @@ function ProfileEditForm({ profile, onSaved }: { profile: Profile; onSaved: () =
       lastName: profile.lastName ?? '',
       bio: profile.bio ?? '',
       categoryTags: profile.categoryTags,
+      isAvailable: profile.isAvailable,
     },
   });
 
@@ -602,6 +621,20 @@ function ProfileEditForm({ profile, onSaved }: { profile: Profile; onSaved: () =
         />
       </View>
 
+      <View className="flex-row items-center justify-between gap-3 rounded-md border border-olive-100 bg-white px-4 py-4">
+        <View className="flex-1 gap-1">
+          <Text className="font-sans-semibold text-sm text-ink-900">Disponible para trabajar</Text>
+          <Text className="font-sans text-xs text-olive-600">
+            Solo los ayudantes disponibles aparecen en la pantalla de Ayudantes.
+          </Text>
+        </View>
+        <Controller
+          control={control}
+          name="isAvailable"
+          render={({ field }) => <Switch value={field.value} onValueChange={field.onChange} />}
+        />
+      </View>
+
       <View className="gap-3">
         <Text className="font-sans-semibold text-sm text-olive-700">Categorías que sigues</Text>
         <Text className="font-sans text-sm text-olive-600">
@@ -610,7 +643,9 @@ function ProfileEditForm({ profile, onSaved }: { profile: Profile; onSaved: () =
         <Controller
           control={control}
           name="categoryTags"
-          render={({ field }) => <CategoryTagPicker value={field.value} onChange={field.onChange} />}
+          render={({ field }) => (
+            <CategoryTagPicker value={field.value} onChange={field.onChange} />
+          )}
         />
       </View>
 

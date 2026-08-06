@@ -3,6 +3,14 @@ export function yearsSince(isoDate: string): number {
   return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24 * 365.25)));
 }
 
+export function formatMemberSince(isoDate: string): string {
+  const formatted = new Date(isoDate).toLocaleDateString('es-ES', {
+    month: 'long',
+    year: 'numeric',
+  });
+  return `Miembro desde ${formatted}`;
+}
+
 function hace(n: number, singular: string, plural: string): string {
   return n === 1 ? `Hace 1 ${singular}` : `Hace ${n} ${plural}`;
 }

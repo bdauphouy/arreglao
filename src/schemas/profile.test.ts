@@ -26,6 +26,7 @@ describe('profileEditSchema', () => {
       lastName: 'Pérez',
       bio: 'Plomera con 5 años de experiencia.',
       categoryTags: ['bricolaje', 'jardineria'],
+      isAvailable: true,
     });
     expect(result.success).toBe(true);
   });
@@ -36,6 +37,7 @@ describe('profileEditSchema', () => {
       lastName: 'Pérez',
       bio: '',
       categoryTags: ['bricolaje'],
+      isAvailable: true,
     });
     expect(result.success).toBe(true);
   });
@@ -46,6 +48,7 @@ describe('profileEditSchema', () => {
       lastName: 'Pérez',
       bio: '',
       categoryTags: ['bricolaje'],
+      isAvailable: true,
     });
     expect(result.success).toBe(false);
   });
@@ -56,6 +59,7 @@ describe('profileEditSchema', () => {
       lastName: 'Pérez',
       bio: '',
       categoryTags: [],
+      isAvailable: true,
     });
     expect(result.success).toBe(true);
   });
@@ -66,6 +70,7 @@ describe('profileEditSchema', () => {
       lastName: 'Pérez',
       bio: '',
       categoryTags: ['otro'],
+      isAvailable: false,
     });
     expect(result.success).toBe(true);
   });
@@ -76,6 +81,17 @@ describe('profileEditSchema', () => {
       lastName: 'Pérez',
       bio: '',
       categoryTags: ['plumbing'],
+      isAvailable: true,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a missing isAvailable flag', () => {
+    const result = profileEditSchema.safeParse({
+      firstName: 'Ana',
+      lastName: 'Pérez',
+      bio: '',
+      categoryTags: ['bricolaje'],
     });
     expect(result.success).toBe(false);
   });

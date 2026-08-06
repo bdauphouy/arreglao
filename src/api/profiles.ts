@@ -24,6 +24,7 @@ export type Profile = {
   serviceRadiusKm: number | null;
   identityVerified: boolean;
   phoneVerified: boolean;
+  isAvailable: boolean;
   createdAt: string;
 };
 
@@ -32,7 +33,7 @@ export function displayNameFor(profile: Profile): string {
 }
 
 const PROFILE_COLUMNS =
-  'id, email, first_name, last_name, avatar_url, bio, location_lat, location_lng, address_label, category_tags, average_rating, review_count, is_top_provider, experience_years, certification, equipment_tags, commitment_tags, service_radius_km, identity_verified, phone_verified, created_at';
+  'id, email, first_name, last_name, avatar_url, bio, location_lat, location_lng, address_label, category_tags, average_rating, review_count, is_top_provider, experience_years, certification, equipment_tags, commitment_tags, service_radius_km, identity_verified, phone_verified, is_available, created_at';
 
 function toProfile(row: {
   id: string;
@@ -55,6 +56,7 @@ function toProfile(row: {
   service_radius_km: number | null;
   identity_verified: boolean;
   phone_verified: boolean;
+  is_available: boolean;
   created_at: string;
 }): Profile {
   return {
@@ -80,6 +82,7 @@ function toProfile(row: {
     serviceRadiusKm: row.service_radius_km,
     identityVerified: row.identity_verified,
     phoneVerified: row.phone_verified,
+    isAvailable: row.is_available,
     createdAt: row.created_at,
   };
 }
@@ -117,7 +120,7 @@ export async function listHelpers(
   excludeUserId?: string,
   nearby?: NearbyFilter,
 ): Promise<Profile[]> {
-  let query = supabase.from('profiles').select(PROFILE_COLUMNS);
+  let query = supabase.from('profiles').select(PROFILE_COLUMNS).eq('is_available', true);
   if (excludeUserId) {
     query = query.neq('id', excludeUserId);
   }
@@ -157,6 +160,7 @@ export type ProfileDetailsUpdate = {
   lastName: string;
   bio: string;
   categoryTags: JobCategory[];
+  isAvailable: boolean;
   location: { lat: number; lng: number } | null;
   addressLabel: string | null;
 };
@@ -172,6 +176,7 @@ export async function updateProfileDetails(
       last_name: input.lastName,
       bio: input.bio,
       category_tags: input.categoryTags,
+      is_available: input.isAvailable,
       location_lat: input.location?.lat ?? null,
       location_lng: input.location?.lng ?? null,
       address_label: input.addressLabel,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { relativeTimeFromNow } from './relative-time';
+import { formatMemberSince, relativeTimeFromNow } from './relative-time';
 
 describe('relativeTimeFromNow', () => {
   const now = new Date('2026-08-06T12:00:00.000Z');
@@ -48,5 +48,12 @@ describe('relativeTimeFromNow', () => {
 
     const fortyDaysAgo = new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000).toISOString();
     expect(relativeTimeFromNow(fortyDaysAgo)).toBe('Hace 1 mes');
+  });
+});
+
+describe('formatMemberSince', () => {
+  it('formats an ISO date as Spanish month and year', () => {
+    expect(formatMemberSince('2026-08-06T12:00:00.000Z')).toBe('Miembro desde agosto de 2026');
+    expect(formatMemberSince('2024-01-15T00:00:00.000Z')).toBe('Miembro desde enero de 2024');
   });
 });
