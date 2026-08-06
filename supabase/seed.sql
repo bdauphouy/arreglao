@@ -205,38 +205,38 @@ where id = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
 -- lifecycle so screens for each state have something to show. Budgets are
 -- per-job totals in Lempiras, not hourly rates — helpers propose their own
 -- price per application (see applications below).
-insert into public.annonces (poster_id, title, description, category, location_lat, location_lng, budget_min, budget_max, status, chosen_helper_id) values
-  ('55555555-5555-5555-5555-555555555555', 'Leaking kitchen faucet', 'Water dripping under the sink, needs a plumber this week.', 'bricolaje', 15.5022, -88.0262, 400, 800, 'open', null),
-  ('77777777-7777-7777-7777-777777777777', 'Deep clean before move-in', 'Empty 2-bedroom apartment, needs a full deep clean.', 'limpieza', 15.4902, -88.0232, 800, 1500, 'open', null),
-  ('55555555-5555-5555-5555-555555555555', 'Paint living room and hallway', 'Approx 40m2, walls only, paint already bought.', 'bricolaje', 15.5024, -88.0264, 1500, 2500, 'in_review', null),
-  ('77777777-7777-7777-7777-777777777777', 'Move furniture to new apartment', 'One bedroom set and a sofa, 15 minutes away.', 'mudanza', 15.4904, -88.0234, 1000, 1800, 'assigned', '44444444-4444-4444-4444-444444444444'),
-  ('55555555-5555-5555-5555-555555555555', 'Fix broken bathroom tile', 'A few cracked tiles near the shower, need replacing.', 'bricolaje', 15.5026, -88.0266, 600, 1200, 'assigned', '11111111-1111-1111-1111-111111111111'),
-  ('77777777-7777-7777-7777-777777777777', 'Math tutoring for teenager', 'Weekly algebra and geometry help ahead of exams.', 'clases_particulares', 15.4906, -88.0236, 300, 500, 'done', '88888888-8888-8888-8888-888888888888'),
-  ('55555555-5555-5555-5555-555555555555', 'Rewire old ceiling lights', 'Two bedrooms, old wiring needs replacing.', 'bricolaje', 15.5028, -88.0268, 900, 1600, 'done', '66666666-6666-6666-6666-666666666666'),
-  ('77777777-7777-7777-7777-777777777777', 'Weekly house cleaning', 'Looking for a recurring cleaner, 3-bedroom house.', 'limpieza', 15.4908, -88.0238, 600, 1000, 'cancelled', null),
-  ('55555555-5555-5555-5555-555555555555', 'Trim the backyard hedges', 'Overgrown hedges and a small flower bed need tidying up.', 'jardineria', 15.5030, -88.0270, 350, 700, 'open', null),
-  ('77777777-7777-7777-7777-777777777777', 'Babysitter needed Friday night', 'One evening, two kids aged 5 and 8, until 11pm.', 'ninos', 15.4910, -88.0240, 250, 450, 'open', null),
-  ('55555555-5555-5555-5555-555555555555', 'Dog walking twice a day', 'One friendly labrador, mornings and evenings on weekdays.', 'animales', 15.5032, -88.0272, 200, 400, 'open', null),
-  ('77777777-7777-7777-7777-777777777777', 'Laptop won''t turn on, need diagnosis', 'Stopped powering on suddenly, probably a hardware issue.', 'informatica', 15.4912, -88.0242, 400, 900, 'open', null),
-  ('55555555-5555-5555-5555-555555555555', 'Grocery runs and light housework for elderly parent', 'A few hours a week helping around the house.', 'ayuda_domicilio', 15.5034, -88.0274, 300, 600, 'open', null);
+insert into public.annonces (poster_id, title, description, category, location_lat, location_lng, budget, status, chosen_helper_id) values
+  ('55555555-5555-5555-5555-555555555555', 'Leaking kitchen faucet', 'Water dripping under the sink, needs a plumber this week.', 'bricolaje', 15.5022, -88.0262, 800, 'open', null),
+  ('77777777-7777-7777-7777-777777777777', 'Deep clean before move-in', 'Empty 2-bedroom apartment, needs a full deep clean.', 'limpieza', 15.4902, -88.0232, 1500, 'open', null),
+  ('55555555-5555-5555-5555-555555555555', 'Paint living room and hallway', 'Approx 40m2, walls only, paint already bought.', 'bricolaje', 15.5024, -88.0264, 2500, 'in_review', null),
+  ('77777777-7777-7777-7777-777777777777', 'Move furniture to new apartment', 'One bedroom set and a sofa, 15 minutes away.', 'mudanza', 15.4904, -88.0234, 1800, 'assigned', '44444444-4444-4444-4444-444444444444'),
+  ('55555555-5555-5555-5555-555555555555', 'Fix broken bathroom tile', 'A few cracked tiles near the shower, need replacing.', 'bricolaje', 15.5026, -88.0266, 1200, 'assigned', '11111111-1111-1111-1111-111111111111'),
+  ('77777777-7777-7777-7777-777777777777', 'Math tutoring for teenager', 'Weekly algebra and geometry help ahead of exams.', 'clases_particulares', 15.4906, -88.0236, 500, 'done', '88888888-8888-8888-8888-888888888888'),
+  ('55555555-5555-5555-5555-555555555555', 'Rewire old ceiling lights', 'Two bedrooms, old wiring needs replacing.', 'bricolaje', 15.5028, -88.0268, 1600, 'done', '66666666-6666-6666-6666-666666666666'),
+  ('77777777-7777-7777-7777-777777777777', 'Weekly house cleaning', 'Looking for a recurring cleaner, 3-bedroom house.', 'limpieza', 15.4908, -88.0238, 1000, 'cancelled', null),
+  ('55555555-5555-5555-5555-555555555555', 'Trim the backyard hedges', 'Overgrown hedges and a small flower bed need tidying up.', 'jardineria', 15.5030, -88.0270, 700, 'open', null),
+  ('77777777-7777-7777-7777-777777777777', 'Babysitter needed Friday night', 'One evening, two kids aged 5 and 8, until 11pm.', 'ninos', 15.4910, -88.0240, 450, 'open', null),
+  ('55555555-5555-5555-5555-555555555555', 'Dog walking twice a day', 'One friendly labrador, mornings and evenings on weekdays.', 'animales', 15.5032, -88.0272, 400, 'open', null),
+  ('77777777-7777-7777-7777-777777777777', 'Laptop won''t turn on, need diagnosis', 'Stopped powering on suddenly, probably a hardware issue.', 'informatica', 15.4912, -88.0242, 900, 'open', null),
+  ('55555555-5555-5555-5555-555555555555', 'Grocery runs and light housework for elderly parent', 'A few hours a week helping around the house.', 'ayuda_domicilio', 15.5034, -88.0274, 600, 'open', null);
 
 -- Every other seeded user also posts at least one annonce, so the app has a
 -- realistic mix of people who are both helpers (declared skills) and
 -- posters (things they themselves need done), across all nine categories.
-insert into public.annonces (poster_id, title, description, category, location_lat, location_lng, budget_min, budget_max, status, chosen_helper_id) values
-  ('11111111-1111-1111-1111-111111111111', 'Need help with the backyard garden', 'Weeds have taken over, want it cleared and replanted.', 'jardineria', 15.5049, -88.0289, 400, 800, 'open', null),
-  ('22222222-2222-2222-2222-222222222222', 'Dog sitting this weekend', 'Traveling for two days, need someone to watch my dog.', 'animales', 15.4994, -88.0214, 300, 600, 'open', null),
-  ('33333333-3333-3333-3333-333333333333', 'English tutor for my son', '12 year old needs help catching up before the school year ends.', 'clases_particulares', 15.5114, -88.0334, 350, 650, 'open', null),
-  ('44444444-4444-4444-4444-444444444444', 'Fix the AC unit', 'Not cooling properly, might need a recharge or a part replaced.', 'bricolaje', 15.4954, -88.0184, 1200, 2200, 'in_review', null),
-  ('66666666-6666-6666-6666-666666666666', 'Babysitter for Saturday night', 'One kid, 6 years old, from 7pm to midnight.', 'ninos', 15.5084, -88.0154, 300, 500, 'open', null),
-  ('88888888-8888-8888-8888-888888888888', 'Deep clean before a party', 'Hosting family this weekend, need the whole house cleaned Friday.', 'limpieza', 15.5154, -88.0294, 700, 1300, 'open', null),
-  ('99999999-9999-9999-9999-999999999999', 'Help moving office furniture', 'Small office, a few desks and chairs, one floor up.', 'mudanza', 15.4984, -88.0354, 1500, 2800, 'open', null),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Install shelves in the living room', 'Three floating shelves, brackets and shelves already bought.', 'bricolaje', 15.5064, -88.0404, 500, 900, 'open', null),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Dog walker needed', 'Energetic dog needs walks twice a day while I''m at work.', 'animales', 15.4934, -88.0124, 250, 450, 'done', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Set up home wifi network', 'New router, need it configured and extended to cover the whole house.', 'informatica', 15.5034, -88.0104, 500, 900, 'open', null),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Companion for elderly father', 'A few hours a week, company and help with errands.', 'ayuda_domicilio', 15.5004, -88.0304, 400, 700, 'open', null),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Trim the trees in the backyard', 'Two mango trees need pruning before hurricane season.', 'jardineria', 15.5124, -88.0214, 600, 1100, 'assigned', '33333333-3333-3333-3333-333333333333'),
-  ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Math tutor needed urgently', 'High schooler struggling with calculus, exam next week.', 'clases_particulares', 15.4964, -88.0274, 350, 600, 'open', null);
+insert into public.annonces (poster_id, title, description, category, location_lat, location_lng, budget, status, chosen_helper_id) values
+  ('11111111-1111-1111-1111-111111111111', 'Need help with the backyard garden', 'Weeds have taken over, want it cleared and replanted.', 'jardineria', 15.5049, -88.0289, 800, 'open', null),
+  ('22222222-2222-2222-2222-222222222222', 'Dog sitting this weekend', 'Traveling for two days, need someone to watch my dog.', 'animales', 15.4994, -88.0214, 600, 'open', null),
+  ('33333333-3333-3333-3333-333333333333', 'English tutor for my son', '12 year old needs help catching up before the school year ends.', 'clases_particulares', 15.5114, -88.0334, 650, 'open', null),
+  ('44444444-4444-4444-4444-444444444444', 'Fix the AC unit', 'Not cooling properly, might need a recharge or a part replaced.', 'bricolaje', 15.4954, -88.0184, 2200, 'in_review', null),
+  ('66666666-6666-6666-6666-666666666666', 'Babysitter for Saturday night', 'One kid, 6 years old, from 7pm to midnight.', 'ninos', 15.5084, -88.0154, 500, 'open', null),
+  ('88888888-8888-8888-8888-888888888888', 'Deep clean before a party', 'Hosting family this weekend, need the whole house cleaned Friday.', 'limpieza', 15.5154, -88.0294, 1300, 'open', null),
+  ('99999999-9999-9999-9999-999999999999', 'Help moving office furniture', 'Small office, a few desks and chairs, one floor up.', 'mudanza', 15.4984, -88.0354, 2800, 'open', null),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Install shelves in the living room', 'Three floating shelves, brackets and shelves already bought.', 'bricolaje', 15.5064, -88.0404, 900, 'open', null),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Dog walker needed', 'Energetic dog needs walks twice a day while I''m at work.', 'animales', 15.4934, -88.0124, 450, 'done', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Set up home wifi network', 'New router, need it configured and extended to cover the whole house.', 'informatica', 15.5034, -88.0104, 900, 'open', null),
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Companion for elderly father', 'A few hours a week, company and help with errands.', 'ayuda_domicilio', 15.5004, -88.0304, 700, 'open', null),
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Trim the trees in the backyard', 'Two mango trees need pruning before hurricane season.', 'jardineria', 15.5124, -88.0214, 1100, 'assigned', '33333333-3333-3333-3333-333333333333'),
+  ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Math tutor needed urgently', 'High schooler struggling with calculus, exam next week.', 'clases_particulares', 15.4964, -88.0274, 600, 'open', null);
 
 -- A handful of applications on two already-in_review annonces, so the home
 -- feed / annonce detail's "see other applicants' prices before you bid"

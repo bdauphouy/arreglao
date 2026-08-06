@@ -1,20 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Minus, Plus } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import type { Annonce } from '../api/annonces';
 import { applyToAnnonce, hasApplied, listApplicationsForAnnonce } from '../api/applications';
-import {
-  clampPrice,
-  parsePriceInput,
-  PRICE_STEP,
-  QUICK_PICK_PRICES,
-  suggestedApplicationPrice,
-} from '../lib/pricing';
+import { suggestedApplicationPrice } from '../lib/pricing';
 import { Badge } from './badge';
 import { Button } from './button';
-import { Pill } from './pill';
+import { PriceStepper } from './price-stepper';
 import { TextArea } from './text-area';
 
 type ApplyFormProps = {
@@ -25,13 +18,9 @@ type ApplyFormProps = {
 
 export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
   const queryClient = useQueryClient();
-  const suggestedPrice = suggestedApplicationPrice(annonce.budgetMin, annonce.budgetMax);
+  const suggestedPrice = suggestedApplicationPrice(annonce.budget);
   const [price, setPrice] = useState(suggestedPrice);
   const [message, setMessage] = useState('');
-
-  const adjustPrice = (delta: number) => {
-    setPrice((current) => clampPrice(current + delta));
-  };
 
   const hasAppliedQuery = useQuery({
     queryKey: ['application', 'mine', annonce.id, applicantId],
@@ -88,37 +77,7 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
 
       <View className="gap-2">
         <Text className="font-sans-semibold text-sm text-olive-700">Tu precio</Text>
-        <View className="flex-row items-center self-start gap-1 rounded-full border border-olive-200 bg-white py-1 pl-1 pr-3">
-          <Pressable
-            onPress={() => adjustPrice(-PRICE_STEP)}
-            className="h-10 w-10 items-center justify-center rounded-full active:bg-olive-50"
-          >
-            <Minus size={18} color="#14170F" />
-          </Pressable>
-          <View className="flex-row items-center">
-            <Text className="font-sans-extrabold text-2xl leading-tight text-ink-900">L </Text>
-            <TextInput
-              value={String(price)}
-              onChangeText={(text) => setPrice(parsePriceInput(text))}
-              keyboardType="numeric"
-              className="min-w-16 p-0 font-sans-extrabold text-2xl leading-tight text-ink-900"
-              style={{ includeFontPadding: false, textAlignVertical: 'center' }}
-            />
-          </View>
-          <Pressable
-            onPress={() => adjustPrice(PRICE_STEP)}
-            className="h-10 w-10 items-center justify-center rounded-full active:bg-olive-50"
-          >
-            <Plus size={18} color="#14170F" />
-          </Pressable>
-        </View>
-        <View className="flex-row flex-wrap gap-2">
-          {QUICK_PICK_PRICES.map((amount) => (
-            <Pill key={amount} selected={price === amount} onPress={() => setPrice(amount)}>
-              L {amount}
-            </Pill>
-          ))}
-        </View>
+        <PriceStepper value={price} onChange={setPrice} />
       </View>
 
       <View className="gap-2">

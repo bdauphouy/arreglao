@@ -1,0 +1,55 @@
+import { Minus, Plus } from 'lucide-react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
+
+import { clampPrice, parsePriceInput, PRICE_STEP, QUICK_PICK_PRICES } from '../lib/pricing';
+import { Pill } from './pill';
+
+type PriceStepperProps = {
+  value: number;
+  onChange: (value: number) => void;
+  quickPicks?: readonly number[];
+};
+
+export function PriceStepper({
+  value,
+  onChange,
+  quickPicks = QUICK_PICK_PRICES,
+}: PriceStepperProps) {
+  const adjust = (delta: number) => onChange(clampPrice(value + delta));
+
+  return (
+    <View className="gap-2">
+      <View className="flex-row items-center self-start gap-1 rounded-full border border-olive-200 bg-white py-1 pl-1 pr-3">
+        <Pressable
+          onPress={() => adjust(-PRICE_STEP)}
+          className="h-10 w-10 items-center justify-center rounded-full active:bg-olive-50"
+        >
+          <Minus size={18} color="#14170F" />
+        </Pressable>
+        <View className="flex-row items-center">
+          <Text className="font-sans-extrabold text-2xl leading-tight text-ink-900">L </Text>
+          <TextInput
+            value={String(value)}
+            onChangeText={(text) => onChange(parsePriceInput(text))}
+            keyboardType="numeric"
+            className="min-w-16 p-0 font-sans-extrabold text-2xl leading-tight text-ink-900"
+            style={{ includeFontPadding: false, textAlignVertical: 'center' }}
+          />
+        </View>
+        <Pressable
+          onPress={() => adjust(PRICE_STEP)}
+          className="h-10 w-10 items-center justify-center rounded-full active:bg-olive-50"
+        >
+          <Plus size={18} color="#14170F" />
+        </Pressable>
+      </View>
+      <View className="flex-row flex-wrap gap-2">
+        {quickPicks.map((amount) => (
+          <Pill key={amount} selected={value === amount} onPress={() => onChange(amount)}>
+            L {amount}
+          </Pill>
+        ))}
+      </View>
+    </View>
+  );
+}

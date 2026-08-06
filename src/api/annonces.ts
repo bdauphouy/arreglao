@@ -13,8 +13,7 @@ export type Annonce = {
   description: string;
   category: JobCategory;
   location: Coordinates;
-  budgetMin: number | null;
-  budgetMax: number | null;
+  budget: number | null;
   applicationsCount: number;
   status: AnnonceStatus;
   chosenHelperId: string | null;
@@ -22,7 +21,7 @@ export type Annonce = {
 };
 
 const ANNONCE_COLUMNS =
-  'id, poster_id, title, description, category, location_lat, location_lng, budget_min, budget_max, applications_count, status, chosen_helper_id, created_at';
+  'id, poster_id, title, description, category, location_lat, location_lng, budget, applications_count, status, chosen_helper_id, created_at';
 
 function toAnnonce(row: {
   id: string;
@@ -32,8 +31,7 @@ function toAnnonce(row: {
   category: JobCategory;
   location_lat: number;
   location_lng: number;
-  budget_min: number | null;
-  budget_max: number | null;
+  budget: number | null;
   applications_count: number;
   status: AnnonceStatus;
   chosen_helper_id: string | null;
@@ -46,8 +44,7 @@ function toAnnonce(row: {
     description: row.description,
     category: row.category,
     location: { lat: row.location_lat, lng: row.location_lng },
-    budgetMin: row.budget_min,
-    budgetMax: row.budget_max,
+    budget: row.budget,
     applicationsCount: row.applications_count,
     status: row.status,
     chosenHelperId: row.chosen_helper_id,
@@ -69,8 +66,7 @@ export async function createAnnonce(
       category: input.category,
       location_lat: location.lat,
       location_lng: location.lng,
-      budget_min: input.budgetMin,
-      budget_max: input.budgetMax,
+      budget: input.budget,
     })
     .select(ANNONCE_COLUMNS)
     .single();

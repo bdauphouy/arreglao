@@ -478,10 +478,8 @@ function SavedCard({
       <AnnonceSummaryCard
         annonce={annonce}
         meta={
-          annonce.budgetMin != null && annonce.budgetMax != null ? (
-            <Text className="font-sans text-sm text-olive-700">
-              L {annonce.budgetMin} - L {annonce.budgetMax}
-            </Text>
+          annonce.budget != null ? (
+            <Text className="font-sans text-sm text-olive-700">L {annonce.budget}</Text>
           ) : undefined
         }
       />

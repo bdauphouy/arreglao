@@ -2,7 +2,7 @@ export const QUICK_PICK_PRICES = [100, 300, 500, 1000] as const;
 
 export const PRICE_STEP = 50;
 
-const FALLBACK_PRICE = 300;
+export const FALLBACK_PRICE = 300;
 
 // 0 is a valid price (e.g. a favor done for free). Kept separate from
 // PRICE_STEP so tuning the stepper's increment can never silently change
@@ -11,14 +11,8 @@ const MIN_PRICE = 0;
 
 export const MAX_PRICE = 999_999_999;
 
-export function suggestedApplicationPrice(
-  budgetMin: number | null,
-  budgetMax: number | null,
-): number {
-  if (budgetMin == null || budgetMax == null) {
-    return FALLBACK_PRICE;
-  }
-  return Math.round((budgetMin + budgetMax) / 2);
+export function suggestedApplicationPrice(budget: number | null): number {
+  return budget ?? FALLBACK_PRICE;
 }
 
 export function clampPrice(price: number): number {

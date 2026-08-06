@@ -3,21 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { clampPrice, MAX_PRICE, parsePriceInput, suggestedApplicationPrice } from './pricing';
 
 describe('suggestedApplicationPrice', () => {
-  it('returns the rounded mean of the budget range', () => {
-    expect(suggestedApplicationPrice(300, 600)).toBe(450);
+  it('returns the annonce budget as-is', () => {
+    expect(suggestedApplicationPrice(600)).toBe(600);
   });
 
-  it('rounds a fractional mean to the nearest integer', () => {
-    expect(suggestedApplicationPrice(300, 601)).toBe(451);
-  });
-
-  it('falls back to a default when the budget range is missing', () => {
-    expect(suggestedApplicationPrice(null, null)).toBe(300);
-  });
-
-  it('falls back to a default when only one bound is missing', () => {
-    expect(suggestedApplicationPrice(300, null)).toBe(300);
-    expect(suggestedApplicationPrice(null, 600)).toBe(300);
+  it('falls back to a default when the budget is missing', () => {
+    expect(suggestedApplicationPrice(null)).toBe(300);
   });
 });
 

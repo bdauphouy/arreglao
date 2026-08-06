@@ -16,10 +16,7 @@ type AnnonceCardProps = {
 };
 
 export function AnnonceCard({ annonce, poster, myLocation }: AnnonceCardProps) {
-  const budgetLabel =
-    annonce.budgetMin != null && annonce.budgetMax != null
-      ? `L ${annonce.budgetMin} - L ${annonce.budgetMax}`
-      : null;
+  const budgetLabel = annonce.budget != null ? `L ${annonce.budget}` : null;
 
   return (
     <Pressable onPress={() => router.push(`/annonces/${annonce.id}`)}>

@@ -1,17 +1,19 @@
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createAnnonce } from '../../src/api/annonces';
 import { getCurrentUserId } from '../../src/api/auth';
-import { BudgetRangeInput } from '../../src/components/budget-range-input';
 import { Button } from '../../src/components/button';
 import { CategoryPicker } from '../../src/components/category-picker';
+import { PriceStepper } from '../../src/components/price-stepper';
 import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
+import { FALLBACK_PRICE } from '../../src/lib/pricing';
 import { annonceCreateSchema } from '../../src/schemas/annonce';
 import type { JobCategory } from '../../src/schemas/job-category';
 
@@ -27,7 +29,7 @@ export default function NewAnnonceScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<JobCategory | null>(null);
-  const [budgetRange, setBudgetRange] = useState<[number, number]>([500, 1500]);
+  const [budget, setBudget] = useState(FALLBACK_PRICE);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const location = meQuery.data?.location ?? null;
@@ -38,8 +40,7 @@ export default function NewAnnonceScreen() {
         title,
         description,
         category,
-        budgetMin: budgetRange[0],
-        budgetMax: budgetRange[1],
+        budget,
       });
       if (!result.success) {
         const errors: Record<string, string> = {};
@@ -70,10 +71,19 @@ export default function NewAnnonceScreen() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-6">
-        <Text className="font-sans-extrabold text-3xl text-ink-900">Publicar anuncio</Text>
+    <SafeAreaView className="flex-1 bg-sand" edges={['top', 'left', 'right']}>
+      <View className="flex-row items-center gap-3 px-6 pb-2 pt-2">
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          className="h-8 w-8 items-center justify-center"
+        >
+          <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
+        </Pressable>
+        <Text className="font-sans-extrabold text-2xl text-ink-900">Publicar anuncio</Text>
+      </View>
 
+      <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-4">
         {!meQuery.isLoading && !location ? (
           <View className="gap-2 rounded-md border border-olive-200 bg-white p-4">
             <Text className="font-sans-semibold text-sm text-ink-900">
@@ -111,11 +121,9 @@ export default function NewAnnonceScreen() {
         </View>
 
         <View className="gap-3">
-          <Text className="font-sans-semibold text-sm text-olive-700">
-            Presupuesto (Lempiras)
-          </Text>
-          <BudgetRangeInput value={budgetRange} onChange={setBudgetRange} />
-          <FieldError message={fieldErrors.budgetMin ?? fieldErrors.budgetMax} />
+          <Text className="font-sans-semibold text-sm text-olive-700">Presupuesto (Lempiras)</Text>
+          <PriceStepper value={budget} onChange={setBudget} />
+          <FieldError message={fieldErrors.budget} />
         </View>
 
         {createMutation.isError ? (
@@ -126,13 +134,23 @@ export default function NewAnnonceScreen() {
           </Text>
         ) : null}
 
-        <Button
-          size="lg"
-          onPress={() => createMutation.mutate()}
-          disabled={createMutation.isPending || !location}
-        >
-          {createMutation.isPending ? 'Publicando…' : 'Publicar'}
-        </Button>
+        <View className="gap-3">
+          <Button
+            size="lg"
+            onPress={() => createMutation.mutate()}
+            disabled={createMutation.isPending || !location}
+          >
+            {createMutation.isPending ? 'Publicando…' : 'Publicar'}
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onPress={() => router.back()}
+            disabled={createMutation.isPending}
+          >
+            Cancelar
+          </Button>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

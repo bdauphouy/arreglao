@@ -8,8 +8,7 @@ describe('annonceCreateSchema', () => {
       title: 'Reparar fuga de agua',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
       category: 'bricolaje',
-      budgetMin: 300,
-      budgetMax: 600,
+      budget: 600,
     });
     expect(result.success).toBe(true);
   });
@@ -19,8 +18,7 @@ describe('annonceCreateSchema', () => {
       title: '',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
       category: 'bricolaje',
-      budgetMin: 300,
-      budgetMax: 600,
+      budget: 600,
     });
     expect(result.success).toBe(false);
   });
@@ -30,8 +28,7 @@ describe('annonceCreateSchema', () => {
       title: 'Reparar fuga de agua',
       description: '',
       category: 'bricolaje',
-      budgetMin: 300,
-      budgetMax: 600,
+      budget: 600,
     });
     expect(result.success).toBe(false);
   });
@@ -41,8 +38,7 @@ describe('annonceCreateSchema', () => {
       title: 'Reparar fuga de agua',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
       category: 'otro',
-      budgetMin: 300,
-      budgetMax: 600,
+      budget: 600,
     });
     expect(result.success).toBe(true);
   });
@@ -52,8 +48,7 @@ describe('annonceCreateSchema', () => {
       title: 'Reparar fuga de agua',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
       category: 'plumbing',
-      budgetMin: 300,
-      budgetMax: 600,
+      budget: 600,
     });
     expect(result.success).toBe(false);
   });
@@ -67,13 +62,12 @@ describe('annonceCreateSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects a budget max below the min', () => {
+  it('rejects a non-positive budget', () => {
     const result = annonceCreateSchema.safeParse({
       title: 'Reparar fuga de agua',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
       category: 'bricolaje',
-      budgetMin: 600,
-      budgetMax: 300,
+      budget: 0,
     });
     expect(result.success).toBe(false);
   });

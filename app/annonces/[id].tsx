@@ -80,9 +80,9 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
           </View>
           <Text className="font-sans-extrabold text-2xl text-ink-900">{annonce.title}</Text>
           <Text className="font-sans text-base text-olive-700">{annonce.description}</Text>
-          {annonce.budgetMin != null && annonce.budgetMax != null ? (
+          {annonce.budget != null ? (
             <Text className="font-sans-semibold text-base text-ink-900">
-              Presupuesto: L {annonce.budgetMin} - L {annonce.budgetMax}
+              Presupuesto: L {annonce.budget}
             </Text>
           ) : null}
         </View>
