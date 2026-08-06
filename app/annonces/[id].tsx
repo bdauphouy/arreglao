@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
+import type { ReactNode } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -71,18 +72,21 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
   const isOwner = meQuery.data?.id === annonce.posterId;
   const canCancel = isOwner && (annonce.status === 'open' || annonce.status === 'in_review');
   const isAcceptingApplicants = annonce.status === 'open' || annonce.status === 'in_review';
+  const isViewerProfile = (profileId: string) => profileId === meQuery.data?.id;
 
   return (
     <SafeAreaView className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
+          <Badge tone={ANNONCE_STATUS_TONES[annonce.status]}>
+            {ANNONCE_STATUS_LABELS[annonce.status]}
+          </Badge>
+          <View className="flex-row items-start justify-between gap-3">
+            <Text className="flex-1 font-sans-extrabold text-2xl text-ink-900">
+              {annonce.title}
+            </Text>
             <CategoryBadge category={annonce.category} />
-            <Badge tone={ANNONCE_STATUS_TONES[annonce.status]}>
-              {ANNONCE_STATUS_LABELS[annonce.status]}
-            </Badge>
           </View>
-          <Text className="font-sans-extrabold text-2xl text-ink-900">{annonce.title}</Text>
           <Text className="font-sans text-base text-olive-700">{annonce.description}</Text>
           {annonce.budget != null ? (
             <Text className="font-sans-semibold text-base text-ink-900">
@@ -94,21 +98,7 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
         <LocationPreview location={annonce.location} />
 
         {posterQuery.data ? (
-          <Pressable onPress={() => router.push(`/profile/${posterQuery.data.id}`)}>
-            <Card className="flex-row items-center gap-3">
-              <Avatar
-                src={posterQuery.data.avatarUrl}
-                initials={displayNameFor(posterQuery.data).charAt(0).toUpperCase() || '?'}
-                size={48}
-              />
-              <View>
-                <Text className="font-sans-semibold text-base text-ink-900">
-                  {displayNameFor(posterQuery.data)}
-                </Text>
-                <Text className="font-sans text-xs text-olive-600">Ver perfil</Text>
-              </View>
-            </Card>
-          </Pressable>
+          <PosterCard poster={posterQuery.data} disabled={isViewerProfile(posterQuery.data.id)} />
         ) : null}
 
         {canCancel ? (
@@ -122,7 +112,7 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
         ) : null}
 
         {isOwner ? (
-          <ApplicantsSection annonce={annonce} />
+          <ApplicantsSection annonce={annonce} isViewerProfile={isViewerProfile} />
         ) : meQuery.data && isAcceptingApplicants ? (
           <ApplyForm annonce={annonce} applicantId={meQuery.data.id} />
         ) : null}
@@ -131,7 +121,49 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
   );
 }
 
-function ApplicantsSection({ annonce }: { annonce: Annonce }) {
+function ProfileLink({
+  disabled,
+  onPress,
+  children,
+}: {
+  disabled: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  if (disabled) {
+    return <>{children}</>;
+  }
+
+  return <Pressable onPress={onPress}>{children}</Pressable>;
+}
+
+function PosterCard({ poster, disabled }: { poster: Profile; disabled: boolean }) {
+  return (
+    <ProfileLink disabled={disabled} onPress={() => router.push(`/profile/${poster.id}`)}>
+      <Card className="flex-row items-center gap-3">
+        <Avatar
+          src={poster.avatarUrl}
+          initials={displayNameFor(poster).charAt(0).toUpperCase() || '?'}
+          size={48}
+        />
+        <View>
+          <Text className="font-sans-semibold text-base text-ink-900">
+            {displayNameFor(poster)}
+          </Text>
+          {disabled ? null : <Text className="font-sans text-xs text-olive-600">Ver perfil</Text>}
+        </View>
+      </Card>
+    </ProfileLink>
+  );
+}
+
+function ApplicantsSection({
+  annonce,
+  isViewerProfile,
+}: {
+  annonce: Annonce;
+  isViewerProfile: (profileId: string) => boolean;
+}) {
   const queryClient = useQueryClient();
 
   const applicationsQuery = useQuery({
@@ -213,6 +245,7 @@ function ApplicantsSection({ annonce }: { annonce: Annonce }) {
           key={application.id}
           application={application}
           profile={profileById.get(application.applicantId)}
+          disabled={isViewerProfile(application.applicantId)}
           canAssign={canAssign && application.status === 'pending'}
           onAssign={() => assignMutation.mutate(application.applicantId)}
           assigning={
@@ -231,6 +264,7 @@ function ApplicantsSection({ annonce }: { annonce: Annonce }) {
 function ApplicantCard({
   application,
   profile,
+  disabled,
   canAssign,
   onAssign,
   assigning,
@@ -239,54 +273,65 @@ function ApplicantCard({
 }: {
   application: Application;
   profile: Profile | undefined;
+  disabled: boolean;
   canAssign: boolean;
   onAssign: () => void;
   assigning: boolean;
   onMessage: () => void;
   messaging: boolean;
 }) {
-  return (
-    <Card className="gap-3">
-      <Pressable
-        onPress={() => profile && router.push(`/profile/${profile.id}`)}
-        className="flex-row items-center gap-3"
-      >
-        <Avatar
-          src={profile?.avatarUrl}
-          initials={profile ? displayNameFor(profile).charAt(0).toUpperCase() || '?' : '?'}
-          size={44}
-        />
-        <View className="flex-1">
-          <Text className="font-sans-semibold text-base text-ink-900">
-            {profile ? displayNameFor(profile) : 'Cargando…'}
+  const header = (
+    <View className="flex-row items-center gap-3">
+      <Avatar
+        src={profile?.avatarUrl}
+        initials={profile ? displayNameFor(profile).charAt(0).toUpperCase() || '?' : '?'}
+        size={44}
+      />
+      <View className="flex-1">
+        <Text className="font-sans-semibold text-base text-ink-900">
+          {profile ? displayNameFor(profile) : 'Cargando…'}
+        </Text>
+        {profile ? (
+          <Text className="font-sans text-xs text-olive-600">
+            {profile.averageRating != null
+              ? `Calificación: ${profile.averageRating.toFixed(1)}`
+              : 'Sin reseñas aún'}
           </Text>
-          {profile?.averageRating != null ? (
-            <Text className="font-sans text-xs text-olive-600">
-              Calificación: {profile.averageRating.toFixed(1)}
-            </Text>
-          ) : null}
-        </View>
-        <Text className="font-sans-bold text-base text-ink-900">L {application.proposedPrice}</Text>
+        ) : null}
+      </View>
+      <View className="items-end gap-1">
         {application.status !== 'pending' ? (
           <Badge tone={APPLICATION_STATUS_TONES[application.status]}>
             {APPLICATION_STATUS_LABELS[application.status]}
           </Badge>
         ) : null}
-      </Pressable>
+        <Badge tone="accent">L {application.proposedPrice}</Badge>
+      </View>
+    </View>
+  );
+
+  return (
+    <Card className="gap-3">
+      <ProfileLink
+        disabled={disabled}
+        onPress={() => profile && router.push(`/profile/${profile.id}`)}
+      >
+        {header}
+      </ProfileLink>
 
       {application.message ? (
         <Text className="font-sans text-sm text-olive-700">{application.message}</Text>
       ) : null}
 
-      <View className="flex-row gap-3">
+      <View className="flex-row justify-end gap-3">
+        <Button variant="outline" onPress={onMessage} disabled={messaging}>
+          {messaging ? 'Abriendo…' : 'Abrir el chat'}
+        </Button>
         {canAssign ? (
-          <Button variant="outline" onPress={onAssign} disabled={assigning}>
+          <Button variant="primary" onPress={onAssign} disabled={assigning}>
             {assigning ? 'Eligiendo…' : 'Elegir'}
           </Button>
         ) : null}
-        <Button variant="ghost" onPress={onMessage} disabled={messaging}>
-          {messaging ? 'Abriendo…' : 'Abrir el chat'}
-        </Button>
       </View>
     </Card>
   );
