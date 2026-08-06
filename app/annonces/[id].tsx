@@ -250,7 +250,7 @@ function ApplicantCard({
           </Button>
         ) : null}
         <Button variant="ghost" onPress={onMessage} disabled={messaging}>
-          {messaging ? 'Abriendo…' : 'Enviar mensaje'}
+          {messaging ? 'Abriendo…' : 'Abrir el chat'}
         </Button>
       </View>
     </Card>

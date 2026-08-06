@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { assignAnnonce, getAnnonce } from '../../src/api/annonces';
 import {
   getConversation,
   listMessages,
@@ -15,9 +16,13 @@ import {
 } from '../../src/api/conversations';
 import { displayNameFor, getProfile } from '../../src/api/profiles';
 import { Avatar } from '../../src/components/avatar';
+import { Badge } from '../../src/components/badge';
+import { Button } from '../../src/components/button';
+import { CategoryBadge } from '../../src/components/category-badge';
 import { IconButton } from '../../src/components/icon-button';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
+import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,6 +44,21 @@ export default function ConversationScreen() {
     queryKey: ['profile', otherId],
     queryFn: () => getProfile(otherId!),
     enabled: !!otherId,
+  });
+
+  const annonceId = conversationQuery.data?.annonceId;
+  const annonceQuery = useQuery({
+    queryKey: ['annonce', annonceId],
+    queryFn: () => getAnnonce(annonceId!),
+    enabled: !!annonceId,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: () => assignAnnonce(annonceId!, otherId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['annonce', annonceId] });
+      queryClient.invalidateQueries({ queryKey: ['annonces'] });
+    },
   });
 
   const messagesQuery = useQuery({
@@ -89,22 +109,72 @@ export default function ConversationScreen() {
   const messages = messagesQuery.data ?? [];
   const otherName = otherProfileQuery.data ? displayNameFor(otherProfileQuery.data) : 'Cargando…';
 
+  const annonce = annonceQuery.data;
+  // "Poster reviewing an applicant's chat" is the only case where accepting
+  // from here makes sense — otherId is the applicant precisely because a
+  // conversation is only ever between the poster and one applicant on this
+  // annonce (getOrCreateConversation / the auto-create-on-apply trigger).
+  const isPoster = !!me && !!annonce && me.id === annonce.posterId;
+  const isChosen = !!annonce && !!otherId && annonce.chosenHelperId === otherId;
+  const canAssign = !!annonce && (annonce.status === 'open' || annonce.status === 'in_review');
+  const showAcceptButton = isPoster && canAssign && !isChosen;
+
   return (
     <SafeAreaView className="flex-1 bg-sand">
-      <View className="flex-row items-center gap-3 border-b border-olive-100 px-6 pb-4 pt-6">
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={8}
-          className="h-8 w-8 items-center justify-center"
-        >
-          <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
-        </Pressable>
-        <Avatar
-          src={otherProfileQuery.data?.avatarUrl}
-          initials={otherName.charAt(0).toUpperCase() || '?'}
-          size={36}
-        />
-        <Text className="font-sans-semibold text-base text-ink-900">{otherName}</Text>
+      <View className="border-b border-olive-100 px-6 pb-4 pt-6">
+        <View className="flex-row items-center gap-3">
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            className="h-8 w-8 items-center justify-center"
+          >
+            <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
+          </Pressable>
+          <Avatar
+            src={otherProfileQuery.data?.avatarUrl}
+            initials={otherName.charAt(0).toUpperCase() || '?'}
+            size={36}
+          />
+          <Text className="font-sans-semibold text-base text-ink-900">{otherName}</Text>
+        </View>
+
+        {annonce ? (
+          <View className="mt-3 gap-3">
+            <Pressable
+              onPress={() => router.push(`/annonces/${annonce.id}`)}
+              className="flex-row items-center gap-2 rounded-md border border-olive-100 bg-white px-3 py-2 active:bg-olive-50"
+            >
+              <CategoryBadge category={annonce.category} />
+              <Text
+                numberOfLines={1}
+                className="flex-1 font-sans-semibold text-sm text-ink-900"
+              >
+                {annonce.title}
+              </Text>
+              <Badge tone={ANNONCE_STATUS_TONES[annonce.status]}>
+                {ANNONCE_STATUS_LABELS[annonce.status]}
+              </Badge>
+            </Pressable>
+
+            {showAcceptButton ? (
+              <Button
+                size="sm"
+                onPress={() => assignMutation.mutate()}
+                disabled={assignMutation.isPending}
+              >
+                {assignMutation.isPending ? 'Eligiendo…' : `Elegir a ${otherName}`}
+              </Button>
+            ) : isChosen ? (
+              <Badge tone="accent">Elegido para este trabajo</Badge>
+            ) : null}
+
+            {assignMutation.isError ? (
+              <Text className="font-sans text-sm text-danger">
+                No se pudo elegir a este aplicante. Inténtalo de nuevo.
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <KeyboardAvoidingView
