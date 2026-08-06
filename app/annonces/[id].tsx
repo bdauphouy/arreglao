@@ -130,11 +130,11 @@ function ProfileLink({
   onPress: () => void;
   children: ReactNode;
 }) {
-  if (disabled) {
-    return <>{children}</>;
-  }
-
-  return <Pressable onPress={onPress}>{children}</Pressable>;
+  return (
+    <Pressable onPress={onPress} disabled={disabled}>
+      {children}
+    </Pressable>
+  );
 }
 
 function PosterCard({ poster, disabled }: { poster: Profile; disabled: boolean }) {
