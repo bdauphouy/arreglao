@@ -6,6 +6,7 @@ import { displayNameFor, type Profile } from '../api/profiles';
 import { distanceKm, type Coordinates } from '../lib/distance';
 import { relativeTimeFromNow } from '../lib/relative-time';
 import { Avatar } from './avatar';
+import { Badge } from './badge';
 import { Card } from './card';
 import { CategoryBadge } from './category-badge';
 
@@ -54,10 +55,14 @@ export function AnnonceCard({ annonce, poster, myLocation }: AnnonceCardProps) {
               {distanceKm(myLocation, annonce.location).toFixed(1)} km
             </Text>
           ) : null}
-          <Text className="font-sans text-xs text-olive-600">
-            {annonce.applicationsCount}{' '}
-            {annonce.applicationsCount === 1 ? 'aplicante' : 'aplicantes'}
-          </Text>
+          {annonce.applicationsCount === 0 ? (
+            <Badge tone="accent">Sé el primero en postular</Badge>
+          ) : (
+            <Text className="font-sans text-xs text-olive-600">
+              {annonce.applicationsCount}{' '}
+              {annonce.applicationsCount === 1 ? 'aplicante' : 'aplicantes'}
+            </Text>
+          )}
         </View>
       </Card>
     </Pressable>
