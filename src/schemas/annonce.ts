@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-import { jobCategorySchema } from './job-category';
+import { annonceCategorySchema } from './job-category';
 
 export const annonceCreateSchema = z
   .object({
     title: z.string().min(1, 'El título es obligatorio'),
     description: z.string().min(1, 'La descripción es obligatoria'),
-    category: jobCategorySchema,
+    category: annonceCategorySchema,
     budgetMin: z.number({ message: 'Indica un presupuesto mínimo' }).positive('Debe ser mayor a 0'),
     budgetMax: z.number({ message: 'Indica un presupuesto máximo' }).positive('Debe ser mayor a 0'),
   })

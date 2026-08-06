@@ -36,11 +36,33 @@ describe('annonceCreateSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects an invalid category', () => {
+  it('accepts a custom category not in the suggested list', () => {
     const result = annonceCreateSchema.safeParse({
       title: 'Reparar fuga de agua',
       description: 'Hay una fuga debajo del fregadero de la cocina.',
-      category: 'plumbing',
+      category: 'Pintura decorativa',
+      budgetMin: 300,
+      budgetMax: 600,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a blank category', () => {
+    const result = annonceCreateSchema.safeParse({
+      title: 'Reparar fuga de agua',
+      description: 'Hay una fuga debajo del fregadero de la cocina.',
+      category: '   ',
+      budgetMin: 300,
+      budgetMax: 600,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a category over 40 characters', () => {
+    const result = annonceCreateSchema.safeParse({
+      title: 'Reparar fuga de agua',
+      description: 'Hay una fuga debajo del fregadero de la cocina.',
+      category: 'x'.repeat(41),
       budgetMin: 300,
       budgetMax: 600,
     });

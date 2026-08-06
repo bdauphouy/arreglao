@@ -8,7 +8,7 @@ import { listOpenAnnonces } from '../../../src/api/annonces';
 import { Card } from '../../../src/components/card';
 import { useCurrentProfile } from '../../../src/hooks/use-current-profile';
 import { distanceKm } from '../../../src/lib/distance';
-import { JOB_CATEGORY_LABELS } from '../../../src/lib/job-categories';
+import { getCategoryLabel, JOB_CATEGORY_LABELS } from '../../../src/lib/job-categories';
 import { jobCategorySchema } from '../../../src/schemas/job-category';
 
 export default function CategoryAnnoncesScreen() {
@@ -57,7 +57,7 @@ export default function CategoryAnnoncesScreen() {
             <Card className="gap-1">
               <Text className="font-sans-semibold text-base text-ink-900">{item.title}</Text>
               <Text className="font-sans text-sm text-olive-600">
-                {JOB_CATEGORY_LABELS[item.category]}
+                {getCategoryLabel(item.category)}
                 {myLocation ? ` · ${distanceKm(myLocation, item.location).toFixed(1)} km` : ''}
               </Text>
             </Card>

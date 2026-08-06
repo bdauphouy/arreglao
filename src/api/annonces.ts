@@ -2,14 +2,13 @@ import { supabase } from '../lib/supabase';
 import type { AnnonceStatus } from '../lib/annonce-status';
 import type { Coordinates } from '../lib/distance';
 import type { AnnonceCreateInput } from '../schemas/annonce';
-import type { JobCategory } from '../schemas/job-category';
 
 export type Annonce = {
   id: string;
   posterId: string;
   title: string;
   description: string;
-  category: JobCategory;
+  category: string;
   location: Coordinates;
   budgetMin: number | null;
   budgetMax: number | null;
@@ -27,7 +26,7 @@ function toAnnonce(row: {
   poster_id: string;
   title: string;
   description: string;
-  category: JobCategory;
+  category: string;
   location_lat: number;
   location_lng: number;
   budget_min: number | null;
@@ -78,7 +77,7 @@ export async function createAnnonce(
   return toAnnonce(data);
 }
 
-export async function listOpenAnnonces(filter?: { category?: JobCategory }): Promise<Annonce[]> {
+export async function listOpenAnnonces(filter?: { category?: string }): Promise<Annonce[]> {
   let query = supabase.from('annonces').select(ANNONCE_COLUMNS).eq('status', 'open');
   if (filter?.category) {
     query = query.eq('category', filter.category);

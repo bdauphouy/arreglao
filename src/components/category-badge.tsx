@@ -1,14 +1,13 @@
 import { Text, View } from 'react-native';
 
-import { JOB_CATEGORY_COLORS, JOB_CATEGORY_LABELS } from '../lib/job-categories';
-import type { JobCategory } from '../schemas/job-category';
+import { getCategoryColors, getCategoryLabel } from '../lib/job-categories';
 
 type CategoryBadgeProps = {
-  category: JobCategory;
+  category: string;
 };
 
 export function CategoryBadge({ category }: CategoryBadgeProps) {
-  const { bg, text } = JOB_CATEGORY_COLORS[category];
+  const { bg, text } = getCategoryColors(category);
 
   return (
     <View
@@ -16,7 +15,7 @@ export function CategoryBadge({ category }: CategoryBadgeProps) {
       className="flex-row items-center self-start rounded-full px-2.5 py-1"
     >
       <Text style={{ color: text }} className="font-sans-bold text-xs">
-        {JOB_CATEGORY_LABELS[category]}
+        {getCategoryLabel(category)}
       </Text>
     </View>
   );

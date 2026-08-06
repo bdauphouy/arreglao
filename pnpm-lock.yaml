@@ -17,9 +17,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.6.0
         version: 5.6.0(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(react-hook-form@7.84.0(react@19.2.3))(zod@4.4.3)
-      '@ptomasroos/react-native-multi-slider':
-        specifier: ^2.2.2
-        version: 2.2.2(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
       '@sentry/react-native':
         specifier: ^8.21.0
         version: 8.21.0(@expo/env@2.4.2)(dotenv@17.4.2)(expo@57.0.10)(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
@@ -1172,12 +1169,6 @@ packages:
 
   '@posthog/types@1.399.0':
     resolution: {integrity: sha512-/WDwBzqIPko8VJ1B+0rlso2XQEz9+2sqtsY9Tqy3p1GhgTqsFakcz/PmMpAnA321LTEZVRcO6x5hAwABV4yrDw==}
-
-  '@ptomasroos/react-native-multi-slider@2.2.2':
-    resolution: {integrity: sha512-HWyCnRD3Z3SbHK2FLWYmBBqd1B4iXipeKv1+AK0FoY/CElEDTEixHE8hN60TsqxalPrznn798LE2Q4tHuCiyaA==}
-    peerDependencies:
-      react: '*'
-      react-native: '*'
 
   '@radix-ui/primitive@1.1.7':
     resolution: {integrity: sha512-rqWnm76nYT8HoNNqEjpgJ7Pw/DrBj5iBTrmEPo6HTX5+VJyBNOqTdv4g89G63HuR5g0AaENoAcH7Is5fF2kZ8Q==}
@@ -6517,11 +6508,6 @@ snapshots:
       '@posthog/types': 1.399.0
 
   '@posthog/types@1.399.0': {}
-
-  '@ptomasroos/react-native-multi-slider@2.2.2(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)':
-    dependencies:
-      react: 19.2.3
-      react-native: 0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
 
   '@radix-ui/primitive@1.1.7': {}
 

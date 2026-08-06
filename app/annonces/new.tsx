@@ -6,14 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createAnnonce } from '../../src/api/annonces';
 import { getCurrentUserId } from '../../src/api/auth';
-import { BudgetRangeSlider } from '../../src/components/budget-range-slider';
+import { BudgetRangeInput } from '../../src/components/budget-range-input';
 import { Button } from '../../src/components/button';
 import { CategoryPicker } from '../../src/components/category-picker';
 import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { annonceCreateSchema } from '../../src/schemas/annonce';
-import type { JobCategory } from '../../src/schemas/job-category';
 
 function FieldError({ message }: { message?: string }) {
   if (!message) {
@@ -26,7 +25,7 @@ export default function NewAnnonceScreen() {
   const meQuery = useCurrentProfile();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<JobCategory | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
   const [budgetRange, setBudgetRange] = useState<[number, number]>([500, 1500]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -114,7 +113,7 @@ export default function NewAnnonceScreen() {
           <Text className="font-sans-semibold text-sm text-olive-700">
             Presupuesto (Lempiras)
           </Text>
-          <BudgetRangeSlider min={50} max={5000} step={50} value={budgetRange} onChange={setBudgetRange} />
+          <BudgetRangeInput value={budgetRange} onChange={setBudgetRange} />
           <FieldError message={fieldErrors.budgetMin ?? fieldErrors.budgetMax} />
         </View>
 

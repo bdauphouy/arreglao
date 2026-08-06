@@ -6,6 +6,7 @@ import {
   PawPrint,
   Sparkles,
   Sprout,
+  Tag,
   Truck,
   Wrench,
   type LucideIcon,
@@ -54,3 +55,25 @@ export const JOB_CATEGORY_COLORS: Record<JobCategory, { bg: string; text: string
   ayuda_domicilio: { bg: '#FBE9D7', text: '#96591C' },
   clases_particulares: { bg: '#F5E9D0', text: '#8C6A18' },
 };
+
+// annonces.category is free text (#29) — a poster can type a category
+// outside JOB_CATEGORIES, so any lookup keyed by an annonce's category (as
+// opposed to iterating JOB_CATEGORIES itself) needs a fallback for values
+// that aren't one of the suggested ones.
+const CUSTOM_CATEGORY_COLORS = { bg: '#E7E4D3', text: '#5C5A44' };
+
+function isSuggestedCategory(category: string): category is JobCategory {
+  return category in JOB_CATEGORY_LABELS;
+}
+
+export function getCategoryLabel(category: string): string {
+  return isSuggestedCategory(category) ? JOB_CATEGORY_LABELS[category] : category;
+}
+
+export function getCategoryIcon(category: string): LucideIcon {
+  return isSuggestedCategory(category) ? JOB_CATEGORY_ICONS[category] : Tag;
+}
+
+export function getCategoryColors(category: string): { bg: string; text: string } {
+  return isSuggestedCategory(category) ? JOB_CATEGORY_COLORS[category] : CUSTOM_CATEGORY_COLORS;
+}

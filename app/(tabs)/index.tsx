@@ -65,7 +65,7 @@ export default function HomeScreen() {
     if (!me || me.categoryTags.length === 0) {
       return [];
     }
-    const tags = new Set(me.categoryTags);
+    const tags = new Set<string>(me.categoryTags);
     return annonces.filter((annonce) => tags.has(annonce.category));
   }, [annonces, me]);
 
