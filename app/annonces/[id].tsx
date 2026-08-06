@@ -150,7 +150,7 @@ function PosterCard({ poster }: { poster: Profile }) {
         <Text className="font-sans text-xs text-olive-600">
           {poster.averageRating != null
             ? `★ ${poster.averageRating.toFixed(1)} (${poster.reviewCount})`
-            : 'Sin reseñas aún'}
+            : 'Sin reseñas'}
         </Text>
       </View>
       <Button variant="outline" size="sm" onPress={() => router.push(`/profile/${poster.id}`)}>
@@ -298,7 +298,7 @@ function ApplicantCard({
           <Text className="font-sans text-xs text-olive-600">
             {profile.averageRating != null
               ? `Calificación: ${profile.averageRating.toFixed(1)}`
-              : 'Sin reseñas aún'}
+              : 'Sin reseñas'}
           </Text>
         ) : null}
       </View>
