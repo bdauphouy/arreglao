@@ -1,30 +1,44 @@
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
+  type BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
 import { useQuery } from '@tanstack/react-query';
 import { AppleMaps } from 'expo-maps';
 import { Image as ExpoImage, type ImageRef } from 'expo-image';
-import { Hand } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Hand, MapPin, Tag } from 'lucide-react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   Animated,
   Easing,
   FlatList,
   Image as RNImage,
   Platform,
+  Pressable,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 
 import { listOpenAnnonces, type Annonce } from '../../src/api/annonces';
 import { displayNameFor, getProfiles } from '../../src/api/profiles';
 import { AnnonceCard } from '../../src/components/annonce-card';
+import { CategoryTagPicker } from '../../src/components/category-tag-picker';
+import { RadiusStepper } from '../../src/components/radius-stepper';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { distanceKm } from '../../src/lib/distance';
+import { DEFAULT_RADIUS_KM } from '../../src/lib/radius';
+import type { JobCategory } from '../../src/schemas/job-category';
 
 // San Pedro Sula, Honduras (see GH issue #26 — was previously centered
 // elsewhere by mistake).
-const SAN_PEDRO_SULA_CAMERA = { coordinates: { latitude: 15.5049, longitude: -88.025 }, zoom: 12.5 };
+const SAN_PEDRO_SULA_CAMERA = {
+  coordinates: { latitude: 15.5049, longitude: -88.025 },
+  zoom: 12.5,
+};
 
 // Fixed zoom level used whenever a single profile becomes selected — by tap
 // or by swiping the card slider — instead of "current zoom + 2", so browsing
@@ -384,14 +398,47 @@ export default function JoblistScreen() {
   const me = meQuery.data ?? null;
   const myLocation = me?.location ?? null;
   const mapRef = useRef<AppleMaps.MapView>(null);
+  const filterSheetRef = useRef<BottomSheetModal>(null);
 
   const annoncesQuery = useQuery({
     queryKey: ['annonces', 'open'],
     queryFn: () => listOpenAnnonces(),
   });
+
+  // Work-area filter (GH #37): radius defaults to the provider's own
+  // service_radius_km (their "usual" travel zone) so the map starts scoped
+  // to what they'd normally accept, but stays editable for e.g. a trip out
+  // of town. Categories default to the profile's category_tags. Both are
+  // seeded from `me` exactly once it loads, then left alone — an empty
+  // category selection means "no restriction" (same semantics as the
+  // profile-edit picker), not "show nothing".
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
+  const [categoryFilter, setCategoryFilter] = useState<JobCategory[]>([]);
+  const didSeedFiltersRef = useRef(false);
+  useEffect(() => {
+    if (didSeedFiltersRef.current || !me) {
+      return;
+    }
+    didSeedFiltersRef.current = true;
+    setRadiusKm(me.serviceRadiusKm ?? DEFAULT_RADIUS_KM);
+    setCategoryFilter(me.categoryTags);
+  }, [me]);
+
   const annonces = useMemo(
-    () => (annoncesQuery.data ?? []).filter((annonce) => annonce.posterId !== me?.id),
-    [annoncesQuery.data, me?.id],
+    () =>
+      (annoncesQuery.data ?? []).filter((annonce) => {
+        if (annonce.posterId === me?.id) {
+          return false;
+        }
+        if (categoryFilter.length > 0 && !categoryFilter.includes(annonce.category)) {
+          return false;
+        }
+        if (myLocation && distanceKm(myLocation, annonce.location) > radiusKm) {
+          return false;
+        }
+        return true;
+      }),
+    [annoncesQuery.data, me?.id, categoryFilter, myLocation, radiusKm],
   );
 
   const posterIds = useMemo(
@@ -509,7 +556,9 @@ export default function JoblistScreen() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedAnnonce = annonces.find((annonce) => annonce.id === selectedId) ?? null;
-  const selectedIndex = selectedId ? sortedAnnonces.findIndex((annonce) => annonce.id === selectedId) : -1;
+  const selectedIndex = selectedId
+    ? sortedAnnonces.findIndex((annonce) => annonce.id === selectedId)
+    : -1;
 
   const focusAnnonce = (annonce: Annonce) => {
     mapRef.current?.setCameraPosition({
@@ -591,9 +640,7 @@ export default function JoblistScreen() {
     const annonce = cluster.annonces[0];
     const poster = posterById.get(annonce.posterId);
     const initial = poster ? displayNameFor(poster).charAt(0).toUpperCase() || '?' : '?';
-    const icon = poster?.avatarUrl
-      ? avatarIcons.get(poster.avatarUrl)
-      : initialsIcons.get(initial);
+    const icon = poster?.avatarUrl ? avatarIcons.get(poster.avatarUrl) : initialsIcons.get(initial);
     return {
       id: annonce.id,
       coordinates: { latitude: annonce.location.lat, longitude: annonce.location.lng },
@@ -616,8 +663,27 @@ export default function JoblistScreen() {
         <InitialsCircleLoader key={initial} initial={initial} onReady={handleInitialsIconReady} />
       ))}
 
-      <View className="gap-1 px-6 pb-4 pt-6">
-        <Text className="font-sans-extrabold text-2xl text-ink-900">Mapa de trabajos</Text>
+      <View className="gap-3 px-6 pb-4 pt-6">
+        <View className="flex-row gap-2">
+          <Pressable
+            onPress={() => filterSheetRef.current?.present()}
+            className="flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
+          >
+            <MapPin size={14} color="#14170F" />
+            <Text className="font-sans-medium text-sm text-ink-900">{radiusKm} km</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => filterSheetRef.current?.present()}
+            className="flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
+          >
+            <Tag size={14} color="#14170F" />
+            <Text className="font-sans-medium text-sm text-ink-900">
+              {categoryFilter.length === 0
+                ? 'Todas las categorías'
+                : `${categoryFilter.length} categorías`}
+            </Text>
+          </Pressable>
+        </View>
         <Text className="font-sans text-sm text-olive-600">
           {annonces.length} anuncios abiertos
         </Text>
@@ -737,6 +803,79 @@ export default function JoblistScreen() {
           </Text>
         </View>
       )}
+
+      <FilterSheet
+        sheetRef={filterSheetRef}
+        radiusKm={radiusKm}
+        onRadiusChange={setRadiusKm}
+        categories={categoryFilter}
+        onCategoriesChange={setCategoryFilter}
+        hasLocation={myLocation != null}
+      />
     </SafeAreaView>
+  );
+}
+
+function FilterSheet({
+  sheetRef,
+  radiusKm,
+  onRadiusChange,
+  categories,
+  onCategoriesChange,
+  hasLocation,
+}: {
+  sheetRef: RefObject<BottomSheetModal | null>;
+  radiusKm: number;
+  onRadiusChange: (radiusKm: number) => void;
+  categories: JobCategory[];
+  onCategoriesChange: (categories: JobCategory[]) => void;
+  hasLocation: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.4} />
+    ),
+    [],
+  );
+
+  return (
+    <BottomSheetModal
+      ref={sheetRef}
+      enableDynamicSizing
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: '#F7F5EE' }}
+      handleIndicatorStyle={{ backgroundColor: '#D8D5C0' }}
+    >
+      <BottomSheetView style={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 16 }}>
+        <View className="gap-6 pb-2">
+          <View className="gap-2">
+            <Text className="font-sans-bold text-lg text-ink-900">Radio de búsqueda</Text>
+            <Text className="font-sans text-sm text-olive-600">
+              {hasLocation
+                ? 'Distancia desde tu dirección guardada.'
+                : 'Guarda tu dirección en tu perfil para activar este filtro.'}
+            </Text>
+            <RadiusStepper value={radiusKm} onChange={onRadiusChange} />
+          </View>
+
+          <View className="gap-2">
+            <Text className="font-sans-bold text-lg text-ink-900">Categorías</Text>
+            <Text className="font-sans text-sm text-olive-600">
+              Muestra solo estos sectores. Puedes no elegir ninguna para verlos todos.
+            </Text>
+            <CategoryTagPicker value={categories} onChange={onCategoriesChange} />
+          </View>
+
+          <Pressable
+            onPress={() => sheetRef.current?.dismiss()}
+            className="h-12 items-center justify-center rounded-full bg-accent"
+          >
+            <Text className="font-sans-bold text-base text-ink-900">Listo</Text>
+          </Pressable>
+        </View>
+      </BottomSheetView>
+    </BottomSheetModal>
   );
 }
