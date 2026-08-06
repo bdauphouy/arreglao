@@ -88,11 +88,7 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
             <CategoryBadge category={annonce.category} />
           </View>
           <Text className="font-sans text-base text-olive-700">{annonce.description}</Text>
-          {annonce.budget != null ? (
-            <Text className="font-sans-semibold text-base text-ink-900">
-              Presupuesto: L {annonce.budget}
-            </Text>
-          ) : null}
+          {annonce.budget != null ? <Badge tone="accent">L {annonce.budget}</Badge> : null}
         </View>
 
         <LocationPreview location={annonce.location} />
