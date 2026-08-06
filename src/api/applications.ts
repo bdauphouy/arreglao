@@ -1,5 +1,8 @@
 import { supabase } from '../lib/supabase';
 import type { ApplicationStatus } from '../lib/application-status';
+import { getAnnonce } from './annonces';
+import { displayNameFor, getProfile } from './profiles';
+import { notifyPush } from './push-notifications';
 
 export type Application = {
   id: string;
@@ -48,7 +51,28 @@ export async function applyToAnnonce(
   if (error) {
     throw error;
   }
-  return toApplication(data);
+  const application = toApplication(data);
+
+  // Gathering context for the push notification is best-effort: it must
+  // never turn a successful application into a failed one for the caller.
+  notifyApplicationReceived(annonceId, applicantId).catch((error) =>
+    console.warn('notifyApplicationReceived failed', error),
+  );
+
+  return application;
+}
+
+async function notifyApplicationReceived(annonceId: string, applicantId: string): Promise<void> {
+  const [annonce, applicant] = await Promise.all([getAnnonce(annonceId), getProfile(applicantId)]);
+  if (annonce.posterId === applicantId) {
+    return;
+  }
+  await notifyPush(annonce.posterId, {
+    type: 'application_received',
+    annonceId,
+    annonceTitle: annonce.title,
+    applicantName: displayNameFor(applicant),
+  });
 }
 
 export async function listApplicationsForAnnonce(annonceId: string): Promise<Application[]> {

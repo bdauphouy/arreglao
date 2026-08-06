@@ -23,6 +23,7 @@ import { env } from '../src/lib/env';
 import { queryClient } from '../src/lib/query-client';
 import { initSentry } from '../src/lib/sentry';
 import { ErrorBoundary } from '../src/components/error-boundary';
+import { PushNotificationsHandler } from '../src/components/push-notifications-handler';
 
 initSentry();
 SplashScreen.preventAutoHideAsync();
@@ -68,6 +69,7 @@ function RootLayout() {
           <OptionalPostHogProvider>
             <QueryClientProvider client={queryClient}>
               <BottomSheetModalProvider>
+                <PushNotificationsHandler />
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="(onboarding)" options={{ animationTypeForReplace: 'pop' }} />
                 </Stack>

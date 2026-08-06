@@ -66,6 +66,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         project: process.env.SENTRY_PROJECT,
       },
     ],
+    [
+      'expo-notifications',
+      {
+        enableBackgroundRemoteNotifications: true,
+      },
+    ],
   ],
   extra: {
     eas: {

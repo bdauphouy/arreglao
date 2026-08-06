@@ -3,6 +3,8 @@ import type { AnnonceStatus } from '../lib/annonce-status';
 import type { Coordinates } from '../lib/distance';
 import type { AnnonceCreateInput } from '../schemas/annonce';
 import type { JobCategory } from '../schemas/job-category';
+import { getOrCreateConversation } from './conversations';
+import { notifyPush } from './push-notifications';
 
 export type Annonce = {
   id: string;
@@ -136,13 +138,31 @@ export async function getAnnonce(id: string): Promise<Annonce> {
 }
 
 export async function assignAnnonce(id: string, helperId: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('annonces')
     .update({ status: 'assigned', chosen_helper_id: helperId })
-    .eq('id', id);
+    .eq('id', id)
+    .select(ANNONCE_COLUMNS)
+    .single();
   if (error) {
     throw error;
   }
+  const annonce = toAnnonce(data);
+
+  // Best-effort: must never turn a successful assignment into a failed one.
+  notifyApplicationAccepted(annonce, helperId).catch((error) =>
+    console.warn('notifyApplicationAccepted failed', error),
+  );
+}
+
+async function notifyApplicationAccepted(annonce: Annonce, helperId: string): Promise<void> {
+  const conversation = await getOrCreateConversation(annonce.id, annonce.posterId, helperId);
+  await notifyPush(helperId, {
+    type: 'application_accepted',
+    annonceId: annonce.id,
+    annonceTitle: annonce.title,
+    conversationId: conversation.id,
+  });
 }
 
 // Poster changing their mind after assigning someone: reopens the annonce

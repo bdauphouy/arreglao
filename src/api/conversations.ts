@@ -1,6 +1,8 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 import { supabase } from '../lib/supabase';
+import { displayNameFor, getProfile } from './profiles';
+import { notifyPush } from './push-notifications';
 
 export type Conversation = {
   id: string;
@@ -161,6 +163,8 @@ export async function listMessages(conversationId: string): Promise<Message[]> {
   return data.map(toMessage);
 }
 
+const PUSH_PREVIEW_MAX_LENGTH = 120;
+
 export async function sendMessage(
   conversationId: string,
   senderId: string,
@@ -174,7 +178,34 @@ export async function sendMessage(
   if (error) {
     throw error;
   }
-  return toMessage(data);
+  const message = toMessage(data);
+
+  // Best-effort: must never turn a successfully sent message into a failed one.
+  notifyMessageReceived(conversationId, senderId, body).catch((error) =>
+    console.warn('notifyMessageReceived failed', error),
+  );
+
+  return message;
+}
+
+async function notifyMessageReceived(
+  conversationId: string,
+  senderId: string,
+  body: string,
+): Promise<void> {
+  const [conversation, sender] = await Promise.all([
+    getConversation(conversationId),
+    getProfile(senderId),
+  ]);
+  await notifyPush(otherParticipant(conversation, senderId), {
+    type: 'message_received',
+    conversationId,
+    senderName: displayNameFor(sender),
+    messagePreview:
+      body.length > PUSH_PREVIEW_MAX_LENGTH
+        ? `${body.slice(0, PUSH_PREVIEW_MAX_LENGTH - 1)}…`
+        : body,
+  });
 }
 
 export function subscribeToMessages(

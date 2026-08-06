@@ -162,6 +162,20 @@ export async function updateProfileDetails(
   }
 }
 
+export async function registerPushToken(userId: string, token: string): Promise<void> {
+  const { error } = await supabase.from('profiles').update({ push_token: token }).eq('id', userId);
+  if (error) {
+    throw error;
+  }
+}
+
+export async function clearPushToken(userId: string): Promise<void> {
+  const { error } = await supabase.from('profiles').update({ push_token: null }).eq('id', userId);
+  if (error) {
+    throw error;
+  }
+}
+
 export async function uploadAvatar(userId: string, base64: string): Promise<string> {
   const path = `${userId}/${Date.now()}.jpg`;
   const { error: uploadError } = await supabase.storage
