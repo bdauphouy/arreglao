@@ -6,16 +6,17 @@ import {
   Bookmark,
   ChevronRight,
   LogOut,
+  Megaphone,
   Send,
   UserRound,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getAnnonces, type Annonce } from '../../src/api/annonces';
+import { getAnnonces, listAnnoncesForPoster, type Annonce } from '../../src/api/annonces';
 import { listApplicationsForApplicant, type Application } from '../../src/api/applications';
 import { signOut } from '../../src/api/auth';
 import { displayNameFor, updateProfileDetails, uploadAvatar, type Profile } from '../../src/api/profiles';
@@ -37,11 +38,12 @@ import { relativeTimeFromNow } from '../../src/lib/relative-time';
 import { profileEditSchema, type ProfileEditInput } from '../../src/schemas/profile';
 import { useAppStore } from '../../src/stores/app-store';
 
-type ViewKey = 'menu' | 'edit' | 'applied' | 'saved';
+type ViewKey = 'menu' | 'edit' | 'posts' | 'applied' | 'saved';
 
 const VIEW_TITLES: Record<ViewKey, string> = {
   menu: 'Mi perfil',
   edit: 'Editar perfil',
+  posts: 'Mis publicaciones',
   applied: 'Postulaciones',
   saved: 'Guardados',
 };
@@ -98,6 +100,7 @@ export default function MyProfileScreen() {
       {view === 'edit' ? (
         <ProfileEditForm key={profile.id} profile={profile} onSaved={() => setView('menu')} />
       ) : null}
+      {view === 'posts' ? <MyAnnoncesList posterId={profile.id} /> : null}
       {view === 'applied' ? <AppliedList applicantId={profile.id} /> : null}
       {view === 'saved' ? <SavedList userId={profile.id} /> : null}
     </SafeAreaView>
@@ -139,6 +142,8 @@ function ProfileMenu({
 
       <View className="rounded-md border border-olive-100 bg-white">
         <MenuRow icon={UserRound} label="Editar perfil" onPress={() => onNavigate('edit')} />
+        <MenuDivider />
+        <MenuRow icon={Megaphone} label="Mis publicaciones" onPress={() => onNavigate('posts')} />
         <MenuDivider />
         <MenuRow icon={Send} label="Postulaciones" onPress={() => onNavigate('applied')} />
         <MenuDivider />
@@ -251,7 +256,11 @@ function AppliedList({ applicantId }: { applicantId: string }) {
   );
 }
 
-function AppliedCard({ application, annonce }: { application: Application; annonce: Annonce }) {
+// Shared by AppliedCard/MyAnnonceCard/SavedCard: every "list of annonces"
+// card in this screen is the same category+status header and title over a
+// tap target to the annonce detail screen, differing only in which extra
+// line of metadata it shows underneath.
+function AnnonceSummaryCard({ annonce, meta }: { annonce: Annonce; meta?: ReactNode }) {
   return (
     <Pressable onPress={() => router.push(`/annonces/${annonce.id}`)}>
       <Card className="gap-2">
@@ -262,6 +271,17 @@ function AppliedCard({ application, annonce }: { application: Application; annon
           </Badge>
         </View>
         <Text className="font-sans-semibold text-base text-ink-900">{annonce.title}</Text>
+        {meta}
+      </Card>
+    </Pressable>
+  );
+}
+
+function AppliedCard({ application, annonce }: { application: Application; annonce: Annonce }) {
+  return (
+    <AnnonceSummaryCard
+      annonce={annonce}
+      meta={
         <View className="flex-row items-center gap-3">
           <Text className="font-sans-semibold text-sm text-ink-900">
             L {application.proposedPrice}
@@ -270,8 +290,53 @@ function AppliedCard({ application, annonce }: { application: Application; annon
             {relativeTimeFromNow(application.createdAt)}
           </Text>
         </View>
-      </Card>
-    </Pressable>
+      }
+    />
+  );
+}
+
+function MyAnnoncesList({ posterId }: { posterId: string }) {
+  const annoncesQuery = useQuery({
+    queryKey: ['annonces', 'mine', posterId],
+    queryFn: () => listAnnoncesForPoster(posterId),
+  });
+
+  const annonces = annoncesQuery.data ?? [];
+
+  if (annoncesQuery.isLoading) {
+    return <EmptyState label="Cargando…" />;
+  }
+
+  if (annonces.length === 0) {
+    return <EmptyState label="Todavía no has publicado ningún anuncio." />;
+  }
+
+  return (
+    <FlatList
+      data={annonces}
+      keyExtractor={(item) => item.id}
+      contentContainerClassName="gap-3 px-6 pb-10 pt-2"
+      renderItem={({ item }) => <MyAnnonceCard annonce={item} />}
+    />
+  );
+}
+
+function MyAnnonceCard({ annonce }: { annonce: Annonce }) {
+  return (
+    <AnnonceSummaryCard
+      annonce={annonce}
+      meta={
+        <View className="flex-row items-center gap-3">
+          <Text className="font-sans text-sm text-olive-600">
+            {annonce.applicationsCount}{' '}
+            {annonce.applicationsCount === 1 ? 'aplicante' : 'aplicantes'}
+          </Text>
+          <Text className="font-sans text-xs text-olive-600">
+            {relativeTimeFromNow(annonce.createdAt)}
+          </Text>
+        </View>
+      }
+    />
   );
 }
 
@@ -332,22 +397,16 @@ function SavedCard({
 }) {
   return (
     <View>
-      <Pressable onPress={() => router.push(`/annonces/${annonce.id}`)}>
-        <Card className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <CategoryBadge category={annonce.category} />
-            <Badge tone={ANNONCE_STATUS_TONES[annonce.status]}>
-              {ANNONCE_STATUS_LABELS[annonce.status]}
-            </Badge>
-          </View>
-          <Text className="font-sans-semibold text-base text-ink-900">{annonce.title}</Text>
-          {annonce.budgetMin != null && annonce.budgetMax != null ? (
+      <AnnonceSummaryCard
+        annonce={annonce}
+        meta={
+          annonce.budgetMin != null && annonce.budgetMax != null ? (
             <Text className="font-sans text-sm text-olive-700">
               L {annonce.budgetMin} - L {annonce.budgetMax}
             </Text>
-          ) : null}
-        </Card>
-      </Pressable>
+          ) : undefined
+        }
+      />
       <Pressable
         onPress={onUnsave}
         disabled={unsaving}

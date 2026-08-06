@@ -99,6 +99,18 @@ export async function listOpenAnnonces(filter?: { category?: JobCategory }): Pro
   return data.map(toAnnonce);
 }
 
+export async function listAnnoncesForPoster(posterId: string): Promise<Annonce[]> {
+  const { data, error } = await supabase
+    .from('annonces')
+    .select(ANNONCE_COLUMNS)
+    .eq('poster_id', posterId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    throw error;
+  }
+  return data.map(toAnnonce);
+}
+
 export async function getAnnonces(ids: string[]): Promise<Annonce[]> {
   if (ids.length === 0) {
     return [];
