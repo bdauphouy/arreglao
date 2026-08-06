@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Minus, Plus } from 'lucide-react-native';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import type { Annonce } from '../api/annonces';
 import { applyToAnnonce, hasApplied, listApplicationsForAnnonce } from '../api/applications';
+import { clampPrice, PRICE_STEP, QUICK_PICK_PRICES, suggestedApplicationPrice } from '../lib/pricing';
 import { Badge } from './badge';
 import { Button } from './button';
+import { Pill } from './pill';
 import { TextArea } from './text-area';
-import { TextField } from './text-field';
 
 type ApplyFormProps = {
   annonce: Annonce;
@@ -17,8 +19,13 @@ type ApplyFormProps = {
 
 export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
   const queryClient = useQueryClient();
-  const [price, setPrice] = useState('');
+  const suggestedPrice = suggestedApplicationPrice(annonce.budgetMin, annonce.budgetMax);
+  const [price, setPrice] = useState(suggestedPrice);
   const [message, setMessage] = useState('');
+
+  const adjustPrice = (delta: number) => {
+    setPrice((current) => clampPrice(current + delta));
+  };
 
   const hasAppliedQuery = useQuery({
     queryKey: ['application', 'mine', annonce.id, applicantId],
@@ -36,13 +43,13 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
     .sort((a, b) => a - b);
 
   const applyMutation = useMutation({
-    mutationFn: () => applyToAnnonce(annonce.id, applicantId, message.trim(), Number(price)),
+    mutationFn: () => applyToAnnonce(annonce.id, applicantId, message.trim(), price),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application', 'mine', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['applications', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['annonce', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['annonces'] });
-      setPrice('');
+      setPrice(suggestedPrice);
       setMessage('');
       onApplied?.();
     },
@@ -52,8 +59,7 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
     return <Badge tone="success">Ya aplicaste</Badge>;
   }
 
-  const priceValue = Number(price);
-  const canSubmit = price.trim().length > 0 && priceValue > 0;
+  const canSubmit = price > 0;
 
   return (
     <View className="gap-3">
@@ -74,12 +80,30 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
 
       <View className="gap-2">
         <Text className="font-sans-semibold text-sm text-olive-700">Tu precio (Lempiras)</Text>
-        <TextField
-          placeholder="Ej. 500"
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="numeric"
-        />
+        <View className="flex-row flex-wrap gap-2">
+          {QUICK_PICK_PRICES.map((amount) => (
+            <Pill key={amount} selected={price === amount} onPress={() => setPrice(amount)}>
+              L {amount}
+            </Pill>
+          ))}
+        </View>
+        <View className="flex-row items-center justify-center gap-4 py-1">
+          <Pressable
+            onPress={() => adjustPrice(-PRICE_STEP)}
+            className="h-10 w-10 items-center justify-center rounded-full border border-olive-200 bg-white active:bg-olive-50"
+          >
+            <Minus size={18} color="#14170F" />
+          </Pressable>
+          <Text className="min-w-24 text-center font-sans-extrabold text-2xl text-ink-900">
+            L {price}
+          </Text>
+          <Pressable
+            onPress={() => adjustPrice(PRICE_STEP)}
+            className="h-10 w-10 items-center justify-center rounded-full border border-olive-200 bg-white active:bg-olive-50"
+          >
+            <Plus size={18} color="#14170F" />
+          </Pressable>
+        </View>
       </View>
 
       <View className="gap-2">

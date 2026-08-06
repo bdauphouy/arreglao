@@ -79,7 +79,16 @@ export async function createAnnonce(
 }
 
 export async function listOpenAnnonces(filter?: { category?: JobCategory }): Promise<Annonce[]> {
-  let query = supabase.from('annonces').select(ANNONCE_COLUMNS).eq('status', 'open');
+  // 'in_review' is entered automatically as soon as the first application
+  // comes in (see advance_annonce_on_application in the applications
+  // migration) — it still accepts further applications until the poster
+  // assigns or cancels, so it belongs in the open feed alongside 'open'.
+  // Filtering to just 'open' here made every annonce vanish from other
+  // users' feeds after its first applicant (#33).
+  let query = supabase
+    .from('annonces')
+    .select(ANNONCE_COLUMNS)
+    .in('status', ['open', 'in_review']);
   if (filter?.category) {
     query = query.eq('category', filter.category);
   }
