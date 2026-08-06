@@ -300,12 +300,20 @@ function ApplicantCard({
         ) : null}
       </View>
       <View className="items-end gap-1">
-        {application.status !== 'pending' ? (
-          <Badge tone={APPLICATION_STATUS_TONES[application.status]}>
-            {APPLICATION_STATUS_LABELS[application.status]}
+        {application.status === 'accepted' ? (
+          <Badge tone={APPLICATION_STATUS_TONES.accepted}>
+            Aprobado por L {application.proposedPrice}
           </Badge>
-        ) : null}
-        <Badge tone="accent">L {application.proposedPrice}</Badge>
+        ) : (
+          <>
+            {application.status !== 'pending' ? (
+              <Badge tone={APPLICATION_STATUS_TONES[application.status]}>
+                {APPLICATION_STATUS_LABELS[application.status]}
+              </Badge>
+            ) : null}
+            <Badge tone="accent">L {application.proposedPrice}</Badge>
+          </>
+        )}
       </View>
     </View>
   );
