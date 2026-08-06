@@ -2,9 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { AppleMaps } from 'expo-maps';
 import { Image as ExpoImage, type ImageRef } from 'expo-image';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Image as RNImage, Platform, Pressable, Text, View } from 'react-native';
+import {
+  FlatList,
+  Image as RNImage,
+  Platform,
+  Pressable,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 
@@ -20,9 +27,9 @@ import { distanceKm } from '../../src/lib/distance';
 const SAN_PEDRO_SULA_CAMERA = { coordinates: { latitude: 15.5049, longitude: -88.025 }, zoom: 12.5 };
 
 // Fixed zoom level used whenever a single profile becomes selected — by tap
-// or by stepping through the prev/next arrows — instead of "current zoom +
-// 2", so browsing several profiles in a row settles on a stable, readable
-// level rather than zooming in further with every step.
+// or by swiping the card slider — instead of "current zoom + 2", so browsing
+// several profiles in a row settles on a stable, readable level rather than
+// zooming in further with every step.
 const PROFILE_ZOOM = SAN_PEDRO_SULA_CAMERA.zoom + 2;
 
 type ResolvedIcon = ImageRef;
@@ -214,6 +221,76 @@ function ClusterBadgeLoader({
   );
 }
 
+// Same rasterize-to-circle trick as AvatarCircleLoader, used when a poster
+// has no avatarUrl — matches Avatar's own fallback (src/components/avatar.tsx):
+// an olive-200 circle with the poster's initial, instead of the default map
+// pin. Deduped by initial (not poster id) since visually identical circles
+// only need rasterizing once, same as ClusterBadgeLoader deduping by count.
+function InitialsCircleLoader({
+  initial,
+  onReady,
+}: {
+  initial: string;
+  onReady: (initial: string, image: ResolvedIcon) => void;
+}) {
+  const viewRef = useRef<View>(null);
+  const [laidOut, setLaidOut] = useState(false);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!laidOut || done) {
+      return;
+    }
+    let cancelled = false;
+    let secondFrame: number | null = null;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        captureRef(viewRef, { format: 'png', result: 'tmpfile' })
+          .then((uri) => ExpoImage.loadAsync(uri, { maxWidth: 128, maxHeight: 128 }))
+          .then((image) => {
+            if (!cancelled) {
+              setDone(true);
+              onReady(initial, image);
+            }
+          })
+          .catch(() => {});
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame != null) {
+        cancelAnimationFrame(secondFrame);
+      }
+    };
+  }, [laidOut, done, initial, onReady]);
+
+  return (
+    <View
+      ref={viewRef}
+      collapsable={false}
+      onLayout={() => setLaidOut(true)}
+      style={{
+        position: 'absolute',
+        top: -1000,
+        left: -1000,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#D8D5C0', // olive-200
+        borderWidth: 3,
+        borderColor: '#FFFFFF',
+      }}
+    >
+      <Text style={{ fontFamily: 'PlusJakartaSans_700Bold', fontSize: 24, color: '#14170F' }}>
+        {initial}
+      </Text>
+    </View>
+  );
+}
+
 export default function JoblistScreen() {
   const meQuery = useCurrentProfile();
   const myLocation = meQuery.data?.location ?? null;
@@ -254,6 +331,23 @@ export default function JoblistScreen() {
   const [avatarIcons, setAvatarIcons] = useState<Map<string, ResolvedIcon>>(new Map());
   const handleAvatarIconReady = (url: string, image: ResolvedIcon) => {
     setAvatarIcons((prev) => (prev.has(url) ? prev : new Map(prev).set(url, image)));
+  };
+
+  const posterInitials = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (postersQuery.data ?? [])
+            .filter((profile) => profile.avatarUrl == null)
+            .map((profile) => displayNameFor(profile).charAt(0).toUpperCase() || '?'),
+        ),
+      ),
+    [postersQuery.data],
+  );
+
+  const [initialsIcons, setInitialsIcons] = useState<Map<string, ResolvedIcon>>(new Map());
+  const handleInitialsIconReady = (initial: string, image: ResolvedIcon) => {
+    setInitialsIcons((prev) => (prev.has(initial) ? prev : new Map(prev).set(initial, image)));
   };
 
   const [badgeIcons, setBadgeIcons] = useState<Map<number, ResolvedIcon>>(new Map());
@@ -300,7 +394,6 @@ export default function JoblistScreen() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedAnnonce = annonces.find((annonce) => annonce.id === selectedId) ?? null;
-  const selectedPoster = selectedAnnonce ? posterById.get(selectedAnnonce.posterId) : undefined;
   const selectedIndex = selectedId ? sortedAnnonces.findIndex((annonce) => annonce.id === selectedId) : -1;
 
   const focusAnnonce = (annonce: Annonce) => {
@@ -310,18 +403,24 @@ export default function JoblistScreen() {
     });
   };
 
-  const selectNeighbor = (delta: 1 | -1) => {
-    if (selectedIndex === -1) {
+  // Card width matches the slider's inset-x-4 (16px) side margins, so
+  // pagingEnabled below snaps exactly one card per swipe.
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = windowWidth - 32;
+
+  const sliderRef = useRef<FlatList<Annonce>>(null);
+  // Tracks which selection change originated from the slider itself, so the
+  // sync effect below only programmatically scrolls when selection changed
+  // some other way (a map pin tap) — otherwise every user swipe would
+  // immediately trigger a redundant scrollToIndex back to where it already is.
+  const scrollOriginIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedId || selectedIndex === -1 || scrollOriginIdRef.current === selectedId) {
       return;
     }
-    const nextIndex = selectedIndex + delta;
-    const nextAnnonce = sortedAnnonces[nextIndex];
-    if (!nextAnnonce) {
-      return;
-    }
-    setSelectedId(nextAnnonce.id);
-    focusAnnonce(nextAnnonce);
-  };
+    scrollOriginIdRef.current = selectedId;
+    sliderRef.current?.scrollToIndex({ index: selectedIndex, animated: true });
+  }, [selectedId, selectedIndex]);
 
   const annotations: AppleMaps.Annotation[] = clusters.map((cluster) => {
     if (cluster.annonces.length > 1) {
@@ -335,7 +434,10 @@ export default function JoblistScreen() {
 
     const annonce = cluster.annonces[0];
     const poster = posterById.get(annonce.posterId);
-    const icon = poster?.avatarUrl ? avatarIcons.get(poster.avatarUrl) : undefined;
+    const initial = poster ? displayNameFor(poster).charAt(0).toUpperCase() || '?' : '?';
+    const icon = poster?.avatarUrl
+      ? avatarIcons.get(poster.avatarUrl)
+      : initialsIcons.get(initial);
     return {
       id: annonce.id,
       coordinates: { latitude: annonce.location.lat, longitude: annonce.location.lng },
@@ -350,6 +452,9 @@ export default function JoblistScreen() {
       ))}
       {clusterCounts.map((count) => (
         <ClusterBadgeLoader key={count} count={count} onReady={handleBadgeIconReady} />
+      ))}
+      {posterInitials.map((initial) => (
+        <InitialsCircleLoader key={initial} initial={initial} onReady={handleInitialsIconReady} />
       ))}
 
       <View className="gap-1 px-6 pb-4 pt-6">
@@ -398,77 +503,82 @@ export default function JoblistScreen() {
           />
 
           {selectedAnnonce ? (
-            <View className="absolute inset-x-4 bottom-4 flex-row items-center gap-2">
-              <Pressable
-                onPress={() => selectNeighbor(-1)}
-                disabled={selectedIndex <= 0}
-                hitSlop={8}
-                className="h-9 w-9 items-center justify-center rounded-full border border-olive-100 bg-white shadow-sm"
-                style={{ opacity: selectedIndex <= 0 ? 0.35 : 1 }}
-              >
-                <ChevronLeft size={20} strokeWidth={1.75} color="#14170F" />
-              </Pressable>
-
-              <View className="flex-1 gap-2 rounded-md border border-olive-100 bg-white p-4 shadow-sm">
-                <Pressable
-                  onPress={() => selectedPoster && router.push(`/profile/${selectedPoster.id}`)}
-                  className="flex-row items-center gap-3"
-                >
-                  <Avatar
-                    src={selectedPoster?.avatarUrl}
-                    initials={
-                      selectedPoster
-                        ? displayNameFor(selectedPoster).charAt(0).toUpperCase() || '?'
-                        : '?'
-                    }
-                    size={44}
-                  />
-                  <View className="flex-1">
-                    <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
-                      {selectedPoster ? displayNameFor(selectedPoster) : 'Cargando…'}
-                    </Text>
-                    {selectedPoster?.averageRating != null ? (
-                      <Text className="font-sans text-xs text-olive-600">
-                        ★ {selectedPoster.averageRating.toFixed(1)}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <CategoryBadge category={selectedAnnonce.category} />
-                </Pressable>
-
-                <Pressable onPress={() => router.push(`/annonces/${selectedAnnonce.id}`)} className="gap-1">
-                  <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
-                    {selectedAnnonce.title}
-                  </Text>
-                  <Text numberOfLines={2} className="font-sans text-sm text-olive-700">
-                    {selectedAnnonce.description}
-                  </Text>
-                  <View className="flex-row items-center gap-2 pt-1">
-                    {selectedAnnonce.budgetMin != null && selectedAnnonce.budgetMax != null ? (
-                      <Text className="font-sans-semibold text-sm text-ink-900">
-                        L {selectedAnnonce.budgetMin} - L {selectedAnnonce.budgetMax}
-                      </Text>
-                    ) : null}
-                    {myLocation ? (
-                      <Text className="font-sans text-xs text-olive-600">
-                        {distanceKm(myLocation, selectedAnnonce.location).toFixed(1)} km
-                      </Text>
-                    ) : null}
-                  </View>
-                </Pressable>
-              </View>
-
-              <Pressable
-                onPress={() => selectNeighbor(1)}
-                disabled={selectedIndex === -1 || selectedIndex >= sortedAnnonces.length - 1}
-                hitSlop={8}
-                className="h-9 w-9 items-center justify-center rounded-full border border-olive-100 bg-white shadow-sm"
-                style={{
-                  opacity: selectedIndex === -1 || selectedIndex >= sortedAnnonces.length - 1 ? 0.35 : 1,
+            <View className="absolute inset-x-4 bottom-4">
+              <FlatList
+                ref={sliderRef}
+                data={sortedAnnonces}
+                keyExtractor={(annonce) => annonce.id}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                initialScrollIndex={selectedIndex >= 0 ? selectedIndex : 0}
+                getItemLayout={(_, index) => ({
+                  length: cardWidth,
+                  offset: cardWidth * index,
+                  index,
+                })}
+                onMomentumScrollEnd={(event) => {
+                  const index = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
+                  const annonce = sortedAnnonces[index];
+                  if (annonce && annonce.id !== selectedId) {
+                    scrollOriginIdRef.current = annonce.id;
+                    setSelectedId(annonce.id);
+                    focusAnnonce(annonce);
+                  }
                 }}
-              >
-                <ChevronRight size={20} strokeWidth={1.75} color="#14170F" />
-              </Pressable>
+                renderItem={({ item: annonce }) => {
+                  const poster = posterById.get(annonce.posterId);
+                  return (
+                    <View
+                      style={{ width: cardWidth }}
+                      className="gap-2 rounded-md border border-olive-100 bg-white p-4"
+                    >
+                      <Pressable
+                        onPress={() => poster && router.push(`/profile/${poster.id}`)}
+                        className="flex-row items-center gap-3"
+                      >
+                        <Avatar
+                          src={poster?.avatarUrl}
+                          initials={poster ? displayNameFor(poster).charAt(0).toUpperCase() || '?' : '?'}
+                          size={44}
+                        />
+                        <View className="flex-1">
+                          <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
+                            {poster ? displayNameFor(poster) : 'Cargando…'}
+                          </Text>
+                          {poster?.averageRating != null ? (
+                            <Text className="font-sans text-xs text-olive-600">
+                              ★ {poster.averageRating.toFixed(1)}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <CategoryBadge category={annonce.category} />
+                      </Pressable>
+
+                      <Pressable onPress={() => router.push(`/annonces/${annonce.id}`)} className="gap-1">
+                        <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
+                          {annonce.title}
+                        </Text>
+                        <Text numberOfLines={2} className="font-sans text-sm text-olive-700">
+                          {annonce.description}
+                        </Text>
+                        <View className="flex-row items-center gap-2 pt-1">
+                          {annonce.budgetMin != null && annonce.budgetMax != null ? (
+                            <Text className="font-sans-semibold text-sm text-ink-900">
+                              L {annonce.budgetMin} - L {annonce.budgetMax}
+                            </Text>
+                          ) : null}
+                          {myLocation ? (
+                            <Text className="font-sans text-xs text-olive-600">
+                              {distanceKm(myLocation, annonce.location).toFixed(1)} km
+                            </Text>
+                          ) : null}
+                        </View>
+                      </Pressable>
+                    </View>
+                  );
+                }}
+              />
             </View>
           ) : null}
         </View>
