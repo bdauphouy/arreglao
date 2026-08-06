@@ -145,6 +145,22 @@ export async function assignAnnonce(id: string, helperId: string): Promise<void>
   }
 }
 
+// Poster changing their mind after assigning someone: reopens the annonce
+// for review and clears the chosen helper. Everyone's application status
+// flows back to 'pending' as a side effect (see
+// sync_applications_on_annonce_assignment in the application-status-
+// lifecycle migration), except anyone who withdrew in the meantime.
+export async function unassignAnnonce(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('annonces')
+    .update({ status: 'in_review', chosen_helper_id: null })
+    .eq('id', id)
+    .eq('status', 'assigned');
+  if (error) {
+    throw error;
+  }
+}
+
 export async function cancelAnnonce(id: string): Promise<void> {
   const { error } = await supabase
     .from('annonces')

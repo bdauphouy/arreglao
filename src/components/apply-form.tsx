@@ -44,7 +44,8 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
     enabled: hasAppliedQuery.data === false,
   });
 
-  const otherPrices = [...(applicationsQuery.data ?? [])]
+  const otherPrices = (applicationsQuery.data ?? [])
+    .filter((application) => application.status !== 'withdrawn')
     .map((application) => application.proposedPrice)
     .sort((a, b) => a - b);
 

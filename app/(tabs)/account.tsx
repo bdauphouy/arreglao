@@ -17,7 +17,11 @@ import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getAnnonces, listAnnoncesForPoster, type Annonce } from '../../src/api/annonces';
-import { listApplicationsForApplicant, type Application } from '../../src/api/applications';
+import {
+  listApplicationsForApplicant,
+  withdrawApplication,
+  type Application,
+} from '../../src/api/applications';
 import { signOut } from '../../src/api/auth';
 import { displayNameFor, updateProfileDetails, uploadAvatar, type Profile } from '../../src/api/profiles';
 import { listSavedAnnonceIds, unsaveAnnonce } from '../../src/api/saved-annonces';
@@ -34,6 +38,10 @@ import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
+import {
+  APPLICATION_STATUS_LABELS,
+  type ApplicationStatus,
+} from '../../src/lib/application-status';
 import { relativeTimeFromNow } from '../../src/lib/relative-time';
 import { profileEditSchema, type ProfileEditInput } from '../../src/schemas/profile';
 import { useAppStore } from '../../src/stores/app-store';
@@ -216,7 +224,18 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
+// Display order for the Postulaciones groups — still-open first, then how
+// each one was resolved.
+const APPLICATION_STATUS_ORDER: ApplicationStatus[] = [
+  'pending',
+  'accepted',
+  'rejected',
+  'withdrawn',
+];
+
 function AppliedList({ applicantId }: { applicantId: string }) {
+  const queryClient = useQueryClient();
+
   const applicationsQuery = useQuery({
     queryKey: ['applications', 'mine', applicantId],
     queryFn: () => listApplicationsForApplicant(applicantId),
@@ -232,6 +251,14 @@ function AppliedList({ applicantId }: { applicantId: string }) {
   });
   const annonceById = new Map((annoncesQuery.data ?? []).map((annonce) => [annonce.id, annonce]));
 
+  const withdrawMutation = useMutation({
+    mutationFn: (applicationId: string) => withdrawApplication(applicationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications', 'mine', applicantId] });
+      queryClient.invalidateQueries({ queryKey: ['annonces'] });
+    },
+  });
+
   if (applicationsQuery.isLoading) {
     return <EmptyState label="Cargando…" />;
   }
@@ -241,18 +268,46 @@ function AppliedList({ applicantId }: { applicantId: string }) {
   }
 
   return (
-    <FlatList
-      data={applications}
-      keyExtractor={(item) => item.id}
-      contentContainerClassName="gap-3 px-6 pb-10 pt-2"
-      renderItem={({ item }) => {
-        const annonce = annonceById.get(item.annonceId);
-        if (!annonce) {
+    <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-2">
+      {APPLICATION_STATUS_ORDER.map((status) => {
+        const group = applications.filter((application) => application.status === status);
+        if (group.length === 0) {
           return null;
         }
-        return <AppliedCard application={item} annonce={annonce} />;
-      }}
-    />
+        // Withdrawing only makes sense while the outcome isn't final yet —
+        // rejected/withdrawn applications have nothing left to cancel.
+        const canWithdraw = status === 'pending' || status === 'accepted';
+        return (
+          <View key={status} className="gap-3">
+            <Text className="font-sans-bold text-base text-ink-900">
+              {APPLICATION_STATUS_LABELS[status]} ({group.length})
+            </Text>
+            <View className="gap-3">
+              {group.map((application) => {
+                const annonce = annonceById.get(application.annonceId);
+                if (!annonce) {
+                  return null;
+                }
+                return (
+                  <AppliedCard
+                    key={application.id}
+                    application={application}
+                    annonce={annonce}
+                    onWithdraw={
+                      canWithdraw ? () => withdrawMutation.mutate(application.id) : undefined
+                    }
+                    withdrawing={
+                      withdrawMutation.isPending &&
+                      withdrawMutation.variables === application.id
+                    }
+                  />
+                );
+              })}
+            </View>
+          </View>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -277,21 +332,44 @@ function AnnonceSummaryCard({ annonce, meta }: { annonce: Annonce; meta?: ReactN
   );
 }
 
-function AppliedCard({ application, annonce }: { application: Application; annonce: Annonce }) {
+function AppliedCard({
+  application,
+  annonce,
+  onWithdraw,
+  withdrawing,
+}: {
+  application: Application;
+  annonce: Annonce;
+  onWithdraw?: () => void;
+  withdrawing?: boolean;
+}) {
   return (
-    <AnnonceSummaryCard
-      annonce={annonce}
-      meta={
-        <View className="flex-row items-center gap-3">
-          <Text className="font-sans-semibold text-sm text-ink-900">
-            L {application.proposedPrice}
+    <View className="gap-2">
+      <AnnonceSummaryCard
+        annonce={annonce}
+        meta={
+          <View className="flex-row items-center gap-3">
+            <Text className="font-sans-semibold text-sm text-ink-900">
+              L {application.proposedPrice}
+            </Text>
+            <Text className="font-sans text-xs text-olive-600">
+              {relativeTimeFromNow(application.createdAt)}
+            </Text>
+          </View>
+        }
+      />
+      {onWithdraw ? (
+        <Pressable
+          onPress={onWithdraw}
+          disabled={withdrawing}
+          className="flex-row items-center justify-center rounded-md border border-olive-100 bg-white py-2"
+        >
+          <Text className="font-sans-medium text-sm text-danger">
+            {withdrawing ? 'Cancelando…' : 'Cancelar aplicación'}
           </Text>
-          <Text className="font-sans text-xs text-olive-600">
-            {relativeTimeFromNow(application.createdAt)}
-          </Text>
-        </View>
-      }
-    />
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 

@@ -3,7 +3,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { cancelAnnonce, getAnnonce, assignAnnonce, type Annonce } from '../../src/api/annonces';
+import {
+  cancelAnnonce,
+  getAnnonce,
+  assignAnnonce,
+  unassignAnnonce,
+  type Annonce,
+} from '../../src/api/annonces';
 import { listApplicationsForAnnonce, type Application } from '../../src/api/applications';
 import { getOrCreateConversation } from '../../src/api/conversations';
 import { displayNameFor, getProfile, getProfiles, type Profile } from '../../src/api/profiles';
@@ -16,6 +22,7 @@ import { CategoryBadge } from '../../src/components/category-badge';
 import { LocationPreview } from '../../src/components/location-preview';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
+import { APPLICATION_STATUS_LABELS, APPLICATION_STATUS_TONES } from '../../src/lib/application-status';
 
 export default function AnnonceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -141,6 +148,16 @@ function ApplicantsSection({ annonce }: { annonce: Annonce }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['annonce', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['annonces'] });
+      queryClient.invalidateQueries({ queryKey: ['applications', annonce.id] });
+    },
+  });
+
+  const unassignMutation = useMutation({
+    mutationFn: () => unassignAnnonce(annonce.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['annonce', annonce.id] });
+      queryClient.invalidateQueries({ queryKey: ['annonces'] });
+      queryClient.invalidateQueries({ queryKey: ['applications', annonce.id] });
     },
   });
 
@@ -156,7 +173,12 @@ function ApplicantsSection({ annonce }: { annonce: Annonce }) {
     return null;
   }
 
-  const applications = applicationsQuery.data ?? [];
+  // Withdrawn applications aren't real candidates anymore — same
+  // "N aplicantes" semantics as annonce.applicationsCount, which already
+  // excludes them (see refresh_annonce_applications_count).
+  const applications = (applicationsQuery.data ?? []).filter(
+    (application) => application.status !== 'withdrawn',
+  );
 
   if (applications.length === 0) {
     return <Text className="font-sans text-base text-olive-600">Todavía nadie ha aplicado.</Text>;
@@ -167,30 +189,37 @@ function ApplicantsSection({ annonce }: { annonce: Annonce }) {
 
   return (
     <View className="gap-3">
-      <Text className="font-sans-bold text-lg text-ink-900">
-        Aplicantes ({applications.length})
-      </Text>
-      {applications.map((application) => {
-        const profile = profileById.get(application.applicantId);
-        const isChosen = annonce.chosenHelperId === application.applicantId;
-        return (
-          <ApplicantCard
-            key={application.id}
-            application={application}
-            profile={profile}
-            isChosen={isChosen}
-            canAssign={canAssign}
-            onAssign={() => assignMutation.mutate(application.applicantId)}
-            assigning={
-              assignMutation.isPending && assignMutation.variables === application.applicantId
-            }
-            onMessage={() => messageMutation.mutate(application.applicantId)}
-            messaging={
-              messageMutation.isPending && messageMutation.variables === application.applicantId
-            }
-          />
-        );
-      })}
+      <View className="flex-row items-center justify-between gap-3">
+        <Text className="font-sans-bold text-lg text-ink-900">
+          Aplicantes ({applications.length})
+        </Text>
+        {annonce.status === 'assigned' ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => unassignMutation.mutate()}
+            disabled={unassignMutation.isPending}
+          >
+            {unassignMutation.isPending ? 'Cambiando…' : 'Cambiar decisión'}
+          </Button>
+        ) : null}
+      </View>
+      {applications.map((application) => (
+        <ApplicantCard
+          key={application.id}
+          application={application}
+          profile={profileById.get(application.applicantId)}
+          canAssign={canAssign && application.status === 'pending'}
+          onAssign={() => assignMutation.mutate(application.applicantId)}
+          assigning={
+            assignMutation.isPending && assignMutation.variables === application.applicantId
+          }
+          onMessage={() => messageMutation.mutate(application.applicantId)}
+          messaging={
+            messageMutation.isPending && messageMutation.variables === application.applicantId
+          }
+        />
+      ))}
     </View>
   );
 }
@@ -198,7 +227,6 @@ function ApplicantsSection({ annonce }: { annonce: Annonce }) {
 function ApplicantCard({
   application,
   profile,
-  isChosen,
   canAssign,
   onAssign,
   assigning,
@@ -207,7 +235,6 @@ function ApplicantCard({
 }: {
   application: Application;
   profile: Profile | undefined;
-  isChosen: boolean;
   canAssign: boolean;
   onAssign: () => void;
   assigning: boolean;
@@ -236,7 +263,11 @@ function ApplicantCard({
           ) : null}
         </View>
         <Text className="font-sans-bold text-base text-ink-900">L {application.proposedPrice}</Text>
-        {isChosen ? <Badge tone="accent">Elegido</Badge> : null}
+        {application.status !== 'pending' ? (
+          <Badge tone={APPLICATION_STATUS_TONES[application.status]}>
+            {APPLICATION_STATUS_LABELS[application.status]}
+          </Badge>
+        ) : null}
       </Pressable>
 
       {application.message ? (
@@ -244,7 +275,7 @@ function ApplicantCard({
       ) : null}
 
       <View className="flex-row gap-3">
-        {canAssign && !isChosen ? (
+        {canAssign ? (
           <Button variant="outline" onPress={onAssign} disabled={assigning}>
             {assigning ? 'Eligiendo…' : 'Elegir'}
           </Button>
