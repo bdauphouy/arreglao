@@ -16,3 +16,13 @@ export function distanceKm(a: Coordinates, b: Coordinates): number {
 
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
 }
+
+// A null point (no saved address) can never be confirmed nearby, so it's
+// always treated as outside the radius rather than silently passing through.
+export function isWithinRadiusKm(
+  center: Coordinates,
+  point: Coordinates | null,
+  radiusKm: number,
+): boolean {
+  return point != null && distanceKm(center, point) <= radiusKm;
+}

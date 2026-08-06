@@ -1,25 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { listHelpers, type Profile } from '../../src/api/profiles';
+import type { Profile } from '../../src/api/profiles';
 import { CategoryRail } from '../../src/components/category-rail';
 import { ProfileSlider } from '../../src/components/profile-slider';
-import { useCurrentProfile } from '../../src/hooks/use-current-profile';
+import { useNearbyHelpers } from '../../src/hooks/use-nearby-helpers';
 import { JOB_CATEGORIES, JOB_CATEGORY_LABELS } from '../../src/lib/job-categories';
 import type { JobCategory } from '../../src/schemas/job-category';
 
 export default function HelpersScreen() {
-  const meQuery = useCurrentProfile();
-  const myLocation = meQuery.data?.location ?? null;
-
-  const helpersQuery = useQuery({
-    queryKey: ['helpers', meQuery.data?.id],
-    queryFn: () => listHelpers(meQuery.data?.id),
-    enabled: !meQuery.isLoading,
-  });
+  const { myLocation, helpersQuery } = useNearbyHelpers();
 
   const helpers = useMemo(() => helpersQuery.data ?? [], [helpersQuery.data]);
 

@@ -30,7 +30,7 @@ import { CategoryTagPicker } from '../../src/components/category-tag-picker';
 import { RadiusStepper } from '../../src/components/radius-stepper';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { distanceKm } from '../../src/lib/distance';
-import { DEFAULT_RADIUS_KM } from '../../src/lib/radius';
+import { DEFAULT_MAP_RADIUS_KM } from '../../src/lib/radius';
 import type { JobCategory } from '../../src/schemas/job-category';
 
 // San Pedro Sula, Honduras (see GH issue #26 — was previously centered
@@ -413,7 +413,7 @@ export default function JoblistScreen() {
   // seeded from `me` exactly once it loads, then left alone — an empty
   // category selection means "no restriction" (same semantics as the
   // profile-edit picker), not "show nothing".
-  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_MAP_RADIUS_KM);
   const [categoryFilter, setCategoryFilter] = useState<JobCategory[]>([]);
   const didSeedFiltersRef = useRef(false);
   useEffect(() => {
@@ -421,7 +421,7 @@ export default function JoblistScreen() {
       return;
     }
     didSeedFiltersRef.current = true;
-    setRadiusKm(me.serviceRadiusKm ?? DEFAULT_RADIUS_KM);
+    setRadiusKm(me.serviceRadiusKm ?? DEFAULT_MAP_RADIUS_KM);
     setCategoryFilter(me.categoryTags);
   }, [me]);
 

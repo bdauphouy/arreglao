@@ -1,13 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { displayNameFor, listHelpers } from '../../../src/api/profiles';
+import { displayNameFor } from '../../../src/api/profiles';
 import { Avatar } from '../../../src/components/avatar';
 import { Card } from '../../../src/components/card';
-import { useCurrentProfile } from '../../../src/hooks/use-current-profile';
+import { useNearbyHelpers } from '../../../src/hooks/use-nearby-helpers';
 import { distanceKm } from '../../../src/lib/distance';
 import { JOB_CATEGORY_LABELS } from '../../../src/lib/job-categories';
 import { jobCategorySchema } from '../../../src/schemas/job-category';
@@ -16,14 +15,7 @@ export default function HelpersCategoryScreen() {
   const { category: rawCategory } = useLocalSearchParams<{ category: string }>();
   const parsed = jobCategorySchema.safeParse(rawCategory);
 
-  const meQuery = useCurrentProfile();
-  const myLocation = meQuery.data?.location ?? null;
-
-  const helpersQuery = useQuery({
-    queryKey: ['helpers', meQuery.data?.id],
-    queryFn: () => listHelpers(meQuery.data?.id),
-    enabled: !meQuery.isLoading,
-  });
+  const { myLocation, helpersQuery } = useNearbyHelpers();
 
   const helpers = (helpersQuery.data ?? []).filter((helper) =>
     parsed.success ? helper.categoryTags.includes(parsed.data) : false,

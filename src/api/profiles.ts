@@ -1,5 +1,6 @@
 import { decode } from 'base64-arraybuffer';
 
+import { isWithinRadiusKm, type Coordinates } from '../lib/distance';
 import { supabase } from '../lib/supabase';
 import type { JobCategory } from '../schemas/job-category';
 
@@ -107,7 +108,15 @@ export async function getProfiles(userIds: string[]): Promise<Profile[]> {
   return data.map(toProfile);
 }
 
-export async function listHelpers(excludeUserId?: string): Promise<Profile[]> {
+export type NearbyFilter = {
+  center: Coordinates;
+  radiusKm: number;
+};
+
+export async function listHelpers(
+  excludeUserId?: string,
+  nearby?: NearbyFilter,
+): Promise<Profile[]> {
   let query = supabase.from('profiles').select(PROFILE_COLUMNS);
   if (excludeUserId) {
     query = query.neq('id', excludeUserId);
@@ -116,7 +125,18 @@ export async function listHelpers(excludeUserId?: string): Promise<Profile[]> {
   if (error) {
     throw error;
   }
-  return data.map(toProfile).filter((profile) => profile.categoryTags.length > 0);
+  const helpers = data.map(toProfile).filter((profile) => profile.categoryTags.length > 0);
+  if (!nearby) {
+    return helpers;
+  }
+  // A helper with no saved location can't be confirmed nearby, but it can't
+  // be confirmed far either — exclude only those we know are outside the
+  // radius, rather than dropping helpers who simply haven't set an address.
+  return helpers.filter(
+    (profile) =>
+      profile.location == null ||
+      isWithinRadiusKm(nearby.center, profile.location, nearby.radiusKm),
+  );
 }
 
 export async function updateProfileName(
