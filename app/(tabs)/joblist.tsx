@@ -399,6 +399,7 @@ export default function JoblistScreen() {
   const myLocation = me?.location ?? null;
   const mapRef = useRef<AppleMaps.MapView>(null);
   const filterSheetRef = useRef<BottomSheetModal>(null);
+  const insets = useSafeAreaInsets();
 
   const annoncesQuery = useQuery({
     queryKey: ['annonces', 'open'],
@@ -649,7 +650,7 @@ export default function JoblistScreen() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-sand" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1 bg-sand" edges={['left', 'right']}>
       {avatarUrls.map((url) => (
         <AvatarCircleLoader key={url} url={url} onReady={handleAvatarIconReady} />
       ))}
@@ -667,7 +668,8 @@ export default function JoblistScreen() {
         <View className="flex-1">
           <Pressable
             onPress={() => filterSheetRef.current?.present()}
-            className="absolute right-6 top-4 z-10 flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
+            style={{ top: insets.top + 8 }}
+            className="absolute right-6 z-10 flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
           >
             <SlidersHorizontal size={14} color="#14170F" />
             <Text className="font-sans-medium text-sm text-ink-900">Filtros</Text>
