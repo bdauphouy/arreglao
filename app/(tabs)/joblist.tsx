@@ -663,24 +663,16 @@ export default function JoblistScreen() {
         <InitialsCircleLoader key={initial} initial={initial} onReady={handleInitialsIconReady} />
       ))}
 
-      <View className="gap-1 px-6 pb-4 pt-6">
-        <View className="flex-row items-center justify-between gap-2">
-          <Text className="font-sans-extrabold text-2xl text-ink-900">Mapa de trabajos</Text>
+      {Platform.OS === 'ios' ? (
+        <View className="flex-1">
           <Pressable
             onPress={() => filterSheetRef.current?.present()}
-            className="flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
+            className="absolute right-6 top-4 z-10 flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
           >
             <SlidersHorizontal size={14} color="#14170F" />
             <Text className="font-sans-medium text-sm text-ink-900">Filtros</Text>
           </Pressable>
-        </View>
-        <Text className="font-sans text-sm text-olive-600">
-          {annonces.length} anuncios abiertos
-        </Text>
-      </View>
 
-      {Platform.OS === 'ios' ? (
-        <View className="flex-1">
           <AppleMaps.View
             ref={mapRef}
             style={{ flex: 1 }}
