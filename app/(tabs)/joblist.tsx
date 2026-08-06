@@ -669,7 +669,7 @@ export default function JoblistScreen() {
           <Pressable
             onPress={() => filterSheetRef.current?.present()}
             style={{ top: insets.top + 8 }}
-            className="absolute right-6 z-10 flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
+            className="absolute left-6 z-10 flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
           >
             <SlidersHorizontal size={14} color="#14170F" />
             <Text className="font-sans-medium text-sm text-ink-900">Filtros</Text>
