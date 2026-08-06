@@ -139,21 +139,24 @@ function ProfileLink({
 
 function PosterCard({ poster }: { poster: Profile }) {
   return (
-    <Pressable onPress={() => router.push(`/profile/${poster.id}`)}>
-      <Card className="flex-row items-center gap-3">
-        <Avatar
-          src={poster.avatarUrl}
-          initials={displayNameFor(poster).charAt(0).toUpperCase() || '?'}
-          size={48}
-        />
-        <View>
-          <Text className="font-sans-semibold text-base text-ink-900">
-            {displayNameFor(poster)}
-          </Text>
-          <Text className="font-sans text-xs text-olive-600">Ver perfil</Text>
-        </View>
-      </Card>
-    </Pressable>
+    <Card className="flex-row items-center gap-3">
+      <Avatar
+        src={poster.avatarUrl}
+        initials={displayNameFor(poster).charAt(0).toUpperCase() || '?'}
+        size={48}
+      />
+      <View className="flex-1">
+        <Text className="font-sans-semibold text-base text-ink-900">{displayNameFor(poster)}</Text>
+        <Text className="font-sans text-xs text-olive-600">
+          {poster.averageRating != null
+            ? `★ ${poster.averageRating.toFixed(1)} (${poster.reviewCount})`
+            : 'Sin reseñas aún'}
+        </Text>
+      </View>
+      <Button variant="outline" size="sm" onPress={() => router.push(`/profile/${poster.id}`)}>
+        Ver
+      </Button>
+    </Card>
   );
 }
 
