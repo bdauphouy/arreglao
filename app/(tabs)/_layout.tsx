@@ -2,6 +2,8 @@ import { Tabs, router } from 'expo-router';
 import { Home, Map, MessageCircle, Plus, Users } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
+import { useUnreadMessagesCount } from '../../src/hooks/use-unread-messages-count';
+
 function PublishTabButton() {
   return (
     <View className="flex-1 items-center">
@@ -16,6 +18,8 @@ function PublishTabButton() {
 }
 
 export default function TabsLayout() {
+  const unreadCount = useUnreadMessagesCount();
+
   return (
     <Tabs
       screenOptions={{
@@ -59,6 +63,8 @@ export default function TabsLayout() {
         options={{
           title: 'Mensajes',
           tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size} />,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: '#C1473B' },
         }}
       />
       <Tabs.Screen name="account" options={{ href: null }} />

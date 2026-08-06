@@ -9,6 +9,7 @@ import { assignAnnonce, getAnnonce } from '../../src/api/annonces';
 import {
   getConversation,
   listMessages,
+  markConversationRead,
   otherParticipant,
   sendMessage,
   subscribeToMessages,
@@ -108,6 +109,19 @@ export default function ConversationScreen() {
 
   const messages = messagesQuery.data ?? [];
   const otherName = otherProfileQuery.data ? displayNameFor(otherProfileQuery.data) : 'Cargando…';
+
+  const meId = me?.id;
+  useEffect(() => {
+    // Re-runs on every new message (messages.length changes), so a message
+    // that arrives while this screen is already open gets marked read too,
+    // not just the ones loaded on first open.
+    if (!id || !meId || messages.length === 0) {
+      return;
+    }
+    markConversationRead(id, meId).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['messages', 'unread-count', meId] });
+    });
+  }, [id, meId, messages.length, queryClient]);
 
   const annonce = annonceQuery.data;
   // "Poster reviewing an applicant's chat" is the only case where accepting
