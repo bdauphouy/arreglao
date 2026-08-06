@@ -33,7 +33,10 @@ export default function HomeScreen() {
   });
 
   const me = meQuery.data ?? null;
-  const annonces = useMemo(() => annoncesQuery.data ?? [], [annoncesQuery.data]);
+  const annonces = useMemo(
+    () => (annoncesQuery.data ?? []).filter((annonce) => annonce.posterId !== me?.id),
+    [annoncesQuery.data, me?.id],
+  );
   const myLocation = me?.location ?? null;
 
   const posterIds = useMemo(

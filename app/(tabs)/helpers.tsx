@@ -16,8 +16,9 @@ export default function HelpersScreen() {
   const myLocation = meQuery.data?.location ?? null;
 
   const helpersQuery = useQuery({
-    queryKey: ['helpers'],
-    queryFn: () => listHelpers(),
+    queryKey: ['helpers', meQuery.data?.id],
+    queryFn: () => listHelpers(meQuery.data?.id),
+    enabled: !meQuery.isLoading,
   });
 
   const helpers = useMemo(() => helpersQuery.data ?? [], [helpersQuery.data]);

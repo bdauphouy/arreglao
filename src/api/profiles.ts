@@ -109,8 +109,12 @@ export async function getProfiles(userIds: string[]): Promise<Profile[]> {
   return data.map(toProfile);
 }
 
-export async function listHelpers(): Promise<Profile[]> {
-  const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS);
+export async function listHelpers(excludeUserId?: string): Promise<Profile[]> {
+  let query = supabase.from('profiles').select(PROFILE_COLUMNS);
+  if (excludeUserId) {
+    query = query.neq('id', excludeUserId);
+  }
+  const { data, error } = await query;
   if (error) {
     throw error;
   }
