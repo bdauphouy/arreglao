@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Send } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,7 +25,10 @@ import { IconButton } from '../../src/components/icon-button';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
-import { APPLICATION_STATUS_LABELS, APPLICATION_STATUS_TONES } from '../../src/lib/application-status';
+import {
+  APPLICATION_STATUS_LABELS,
+  APPLICATION_STATUS_TONES,
+} from '../../src/lib/application-status';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,10 +59,17 @@ export default function ConversationScreen() {
     enabled: !!annonceId,
   });
 
+  const annonce = annonceQuery.data;
+  const isPoster = !!me && !!annonce && me.id === annonce.posterId;
+  // The applicant is otherId when the poster is viewing, but "me" when the
+  // applicant themselves is viewing — getApplication looks up by applicant
+  // id, so this has to flip with who's looking at the thread.
+  const applicantId = isPoster ? otherId : (me?.id ?? null);
+
   const applicationQuery = useQuery({
-    queryKey: ['application', annonceId, otherId],
-    queryFn: () => getApplication(annonceId!, otherId!),
-    enabled: !!annonceId && !!otherId,
+    queryKey: ['application', annonceId, applicantId],
+    queryFn: () => getApplication(annonceId!, applicantId!),
+    enabled: !!annonceId && !!applicantId,
   });
 
   const assignMutation = useMutation({
@@ -141,17 +151,37 @@ export default function ConversationScreen() {
     });
   }, [id, meId, messages.length, queryClient]);
 
-  const annonce = annonceQuery.data;
   const application = applicationQuery.data;
-  // "Poster reviewing an applicant's chat" is the only case where accepting
-  // from here makes sense — otherId is the applicant precisely because a
-  // conversation is only ever between the poster and one applicant on this
-  // annonce (getOrCreateConversation / the auto-create-on-apply trigger).
-  const isPoster = !!me && !!annonce && me.id === annonce.posterId;
   const isChosen = application?.status === 'accepted';
   const canAssign = !!annonce && (annonce.status === 'open' || annonce.status === 'in_review');
   const showAcceptButton = isPoster && canAssign && application?.status === 'pending';
   const showChangeDecision = isPoster && isChosen;
+
+  let assignmentAction: ReactNode = null;
+  if (showAcceptButton) {
+    assignmentAction = (
+      <Button size="sm" onPress={() => assignMutation.mutate()} disabled={assignMutation.isPending}>
+        {assignMutation.isPending ? 'Eligiendo…' : `Elegir a ${otherName}`}
+      </Button>
+    );
+  } else if (showChangeDecision) {
+    assignmentAction = (
+      <Button
+        variant="outline"
+        size="sm"
+        onPress={() => unassignMutation.mutate()}
+        disabled={unassignMutation.isPending}
+      >
+        {unassignMutation.isPending ? 'Cambiando…' : 'Cambiar decisión'}
+      </Button>
+    );
+  } else if (application && application.status !== 'pending' && !isChosen) {
+    assignmentAction = (
+      <Badge tone={APPLICATION_STATUS_TONES[application.status]}>
+        {APPLICATION_STATUS_LABELS[application.status]}
+      </Badge>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-sand">
@@ -164,12 +194,18 @@ export default function ConversationScreen() {
           >
             <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
           </Pressable>
-          <Avatar
-            src={otherProfileQuery.data?.avatarUrl}
-            initials={otherName.charAt(0).toUpperCase() || '?'}
-            size={36}
-          />
-          <Text className="font-sans-semibold text-base text-ink-900">{otherName}</Text>
+          <Pressable
+            onPress={() => otherId && router.push(`/profile/${otherId}`)}
+            hitSlop={4}
+            className="flex-1 flex-row items-center gap-3"
+          >
+            <Avatar
+              src={otherProfileQuery.data?.avatarUrl}
+              initials={otherName.charAt(0).toUpperCase() || '?'}
+              size={36}
+            />
+            <Text className="font-sans-semibold text-base text-ink-900">{otherName}</Text>
+          </Pressable>
         </View>
 
         {annonce ? (
@@ -179,10 +215,7 @@ export default function ConversationScreen() {
               className="flex-row items-center gap-2 rounded-md border border-olive-100 bg-white px-3 py-2 active:bg-olive-50"
             >
               <CategoryBadge category={annonce.category} />
-              <Text
-                numberOfLines={1}
-                className="flex-1 font-sans-semibold text-sm text-ink-900"
-              >
+              <Text numberOfLines={1} className="flex-1 font-sans-semibold text-sm text-ink-900">
                 {annonce.title}
               </Text>
               <Badge tone={ANNONCE_STATUS_TONES[annonce.status]}>
@@ -190,33 +223,16 @@ export default function ConversationScreen() {
               </Badge>
             </Pressable>
 
-            {showAcceptButton ? (
-              <Button
-                size="sm"
-                onPress={() => assignMutation.mutate()}
-                disabled={assignMutation.isPending}
-              >
-                {assignMutation.isPending ? 'Eligiendo…' : `Elegir a ${otherName}`}
-              </Button>
-            ) : isChosen ? (
-              <View className="gap-2">
-                <Badge tone="accent">Elegido para este trabajo</Badge>
-                {showChangeDecision ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={() => unassignMutation.mutate()}
-                    disabled={unassignMutation.isPending}
-                  >
-                    {unassignMutation.isPending ? 'Cambiando…' : 'Cambiar decisión'}
-                  </Button>
-                ) : null}
+            {application ? (
+              <View className="flex-row items-center justify-between rounded-md bg-olive-50 px-3 py-2">
+                <Text className="font-sans-semibold text-sm text-olive-700">Precio propuesto</Text>
+                <Text className="font-sans-bold text-base text-ink-900">
+                  L {application.proposedPrice}
+                </Text>
               </View>
-            ) : application && application.status !== 'pending' ? (
-              <Badge tone={APPLICATION_STATUS_TONES[application.status]}>
-                {APPLICATION_STATUS_LABELS[application.status]}
-              </Badge>
             ) : null}
+
+            {assignmentAction}
 
             {assignMutation.isError ? (
               <Text className="font-sans text-sm text-danger">
@@ -243,6 +259,16 @@ export default function ConversationScreen() {
           keyExtractor={(item) => item.id}
           contentContainerClassName="gap-2 px-6 py-4"
           renderItem={({ item }) => {
+            if (item.isSystem) {
+              return (
+                <View className="items-center self-center py-1">
+                  <View className="rounded-full bg-olive-100 px-3 py-1.5">
+                    <Text className="font-sans-medium text-xs text-olive-600">{item.body}</Text>
+                  </View>
+                </View>
+              );
+            }
+
             const isMine = item.senderId === me?.id;
             return (
               <View className={`max-w-[80%] ${isMine ? 'self-end' : 'self-start'}`}>

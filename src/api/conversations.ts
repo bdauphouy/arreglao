@@ -20,11 +20,12 @@ export type Message = {
   senderId: string;
   body: string;
   status: MessageStatus;
+  isSystem: boolean;
   createdAt: string;
 };
 
 const CONVERSATION_COLUMNS = 'id, annonce_id, participant_one_id, participant_two_id, created_at';
-const MESSAGE_COLUMNS = 'id, conversation_id, sender_id, body, status, created_at';
+const MESSAGE_COLUMNS = 'id, conversation_id, sender_id, body, status, is_system, created_at';
 
 function toConversation(row: {
   id: string;
@@ -48,6 +49,7 @@ function toMessage(row: {
   sender_id: string;
   body: string;
   status: MessageStatus;
+  is_system: boolean;
   created_at: string;
 }): Message {
   return {
@@ -56,6 +58,7 @@ function toMessage(row: {
     senderId: row.sender_id,
     body: row.body,
     status: row.status,
+    isSystem: row.is_system,
     createdAt: row.created_at,
   };
 }

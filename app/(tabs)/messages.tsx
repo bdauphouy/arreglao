@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,6 +8,7 @@ import {
   listConversations,
   listLatestMessagesForConversations,
   otherParticipant,
+  subscribeToMessageChanges,
 } from '../../src/api/conversations';
 import { displayNameFor, getProfiles } from '../../src/api/profiles';
 import { Avatar } from '../../src/components/avatar';
@@ -15,12 +17,32 @@ import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 export default function MessagesScreen() {
   const meQuery = useCurrentProfile();
   const me = meQuery.data ?? null;
+  const meId = me?.id;
+  const queryClient = useQueryClient();
 
   const conversationsQuery = useQuery({
     queryKey: ['conversations', me?.id],
     queryFn: () => listConversations(me!.id),
     enabled: !!me,
   });
+
+  useEffect(() => {
+    if (!meId) {
+      return;
+    }
+    // A new conversation (someone applying with a message, or a poster
+    // assigning a helper) surfaces as a message insert — invalidating on
+    // any message change picks up both new conversations and new previews
+    // without the poster having to manually refresh. See
+    // subscribeToMessageChanges's own comment for why this channel is
+    // unscoped and RLS-safe.
+    const channel = subscribeToMessageChanges(() => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    });
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [meId, queryClient]);
 
   const conversations = conversationsQuery.data ?? [];
   const conversationIds = conversations.map((conversation) => conversation.id);
@@ -64,10 +86,15 @@ export default function MessagesScreen() {
         renderItem={({ item }) => {
           const profile = me ? profileById.get(otherParticipant(item, me.id)) : undefined;
           const lastMessage = latestMessagesQuery.data?.get(item.id);
+          const isUnread =
+            !!me &&
+            !!lastMessage &&
+            lastMessage.senderId !== me.id &&
+            lastMessage.status === 'unread';
           return (
             <Pressable
               onPress={() => router.push(`/messages/${item.id}`)}
-              className="flex-row items-center gap-3 border-b border-olive-100 py-3"
+              className={`flex-row items-center gap-3 border-b border-olive-100 py-3 ${isUnread ? 'bg-accent/10' : ''}`}
             >
               <Avatar
                 src={profile?.avatarUrl}
@@ -75,13 +102,19 @@ export default function MessagesScreen() {
                 size={48}
               />
               <View className="flex-1">
-                <Text className="font-sans-semibold text-base text-ink-900">
+                <Text
+                  className={`text-base text-ink-900 ${isUnread ? 'font-sans-bold' : 'font-sans-semibold'}`}
+                >
                   {profile ? displayNameFor(profile) : 'Cargando…'}
                 </Text>
-                <Text numberOfLines={1} className="font-sans text-sm text-olive-600">
+                <Text
+                  numberOfLines={1}
+                  className={`text-sm ${isUnread ? 'font-sans-semibold text-ink-900' : 'font-sans text-olive-600'}`}
+                >
                   {lastMessage?.body ?? 'Sin mensajes todavía'}
                 </Text>
               </View>
+              {isUnread ? <View className="h-2.5 w-2.5 rounded-full bg-accent" /> : null}
             </Pressable>
           );
         }}
