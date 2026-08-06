@@ -97,8 +97,8 @@ function AnnonceDetail({ annonce }: { annonce: Annonce }) {
 
         <LocationPreview location={annonce.location} />
 
-        {posterQuery.data ? (
-          <PosterCard poster={posterQuery.data} disabled={isViewerProfile(posterQuery.data.id)} />
+        {posterQuery.data && !isViewerProfile(posterQuery.data.id) ? (
+          <PosterCard poster={posterQuery.data} />
         ) : null}
 
         {canCancel ? (
@@ -137,9 +137,9 @@ function ProfileLink({
   );
 }
 
-function PosterCard({ poster, disabled }: { poster: Profile; disabled: boolean }) {
+function PosterCard({ poster }: { poster: Profile }) {
   return (
-    <ProfileLink disabled={disabled} onPress={() => router.push(`/profile/${poster.id}`)}>
+    <Pressable onPress={() => router.push(`/profile/${poster.id}`)}>
       <Card className="flex-row items-center gap-3">
         <Avatar
           src={poster.avatarUrl}
@@ -150,10 +150,10 @@ function PosterCard({ poster, disabled }: { poster: Profile; disabled: boolean }
           <Text className="font-sans-semibold text-base text-ink-900">
             {displayNameFor(poster)}
           </Text>
-          {disabled ? null : <Text className="font-sans text-xs text-olive-600">Ver perfil</Text>}
+          <Text className="font-sans text-xs text-olive-600">Ver perfil</Text>
         </View>
       </Card>
-    </ProfileLink>
+    </Pressable>
   );
 }
 
