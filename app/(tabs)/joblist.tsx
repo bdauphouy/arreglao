@@ -7,7 +7,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { AppleMaps } from 'expo-maps';
 import { Image as ExpoImage, type ImageRef } from 'expo-image';
-import { Hand, MapPin, Tag } from 'lucide-react-native';
+import { Hand, SlidersHorizontal } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   Animated,
@@ -663,25 +663,15 @@ export default function JoblistScreen() {
         <InitialsCircleLoader key={initial} initial={initial} onReady={handleInitialsIconReady} />
       ))}
 
-      <View className="gap-3 px-6 pb-4 pt-6">
-        <View className="flex-row gap-2">
+      <View className="gap-1 px-6 pb-4 pt-6">
+        <View className="flex-row items-center justify-between gap-2">
+          <Text className="font-sans-extrabold text-2xl text-ink-900">Mapa de trabajos</Text>
           <Pressable
             onPress={() => filterSheetRef.current?.present()}
             className="flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
           >
-            <MapPin size={14} color="#14170F" />
-            <Text className="font-sans-medium text-sm text-ink-900">{radiusKm} km</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => filterSheetRef.current?.present()}
-            className="flex-row items-center gap-1.5 rounded-full border border-olive-200 bg-white px-4 py-2"
-          >
-            <Tag size={14} color="#14170F" />
-            <Text className="font-sans-medium text-sm text-ink-900">
-              {categoryFilter.length === 0
-                ? 'Todas las categorías'
-                : `${categoryFilter.length} categorías`}
-            </Text>
+            <SlidersHorizontal size={14} color="#14170F" />
+            <Text className="font-sans-medium text-sm text-ink-900">Filtros</Text>
           </Pressable>
         </View>
         <Text className="font-sans text-sm text-olive-600">
