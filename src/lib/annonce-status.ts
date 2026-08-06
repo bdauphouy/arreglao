@@ -17,3 +17,9 @@ export const ANNONCE_STATUS_TONES: Record<AnnonceStatus, BadgeTone> = {
   done: 'success',
   cancelled: 'danger',
 };
+
+// Terminal states have nothing left to happen — used to split "Mis
+// publicaciones" into active vs. past (#43).
+export function isTerminalAnnonceStatus(status: AnnonceStatus): boolean {
+  return status === 'done' || status === 'cancelled';
+}

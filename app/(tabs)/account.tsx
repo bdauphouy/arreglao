@@ -40,11 +40,16 @@ import { Button } from '../../src/components/button';
 import { Card } from '../../src/components/card';
 import { CategoryBadge } from '../../src/components/category-badge';
 import { CategoryTagPicker } from '../../src/components/category-tag-picker';
+import { Pill } from '../../src/components/pill';
 import { Switch } from '../../src/components/switch';
 import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
-import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
+import {
+  ANNONCE_STATUS_LABELS,
+  ANNONCE_STATUS_TONES,
+  isTerminalAnnonceStatus,
+} from '../../src/lib/annonce-status';
 import {
   APPLICATION_STATUS_LABELS,
   isWithdrawn,
@@ -409,19 +414,28 @@ function AppliedCard({
   );
 }
 
+type AnnoncesFilter = 'active' | 'past';
+
 function MyAnnoncesList({ posterId }: { posterId: string }) {
+  const [filter, setFilter] = useState<AnnoncesFilter>('active');
+
   const annoncesQuery = useQuery({
     queryKey: ['annonces', 'mine', posterId],
     queryFn: () => listAnnoncesForPoster(posterId),
   });
 
-  const annonces = annoncesQuery.data ?? [];
+  const allAnnonces = annoncesQuery.data ?? [];
+  const annonces = allAnnonces.filter((annonce) =>
+    filter === 'past'
+      ? isTerminalAnnonceStatus(annonce.status)
+      : !isTerminalAnnonceStatus(annonce.status),
+  );
 
   if (annoncesQuery.isLoading) {
     return <EmptyState label="Cargando…" />;
   }
 
-  if (annonces.length === 0) {
+  if (allAnnonces.length === 0) {
     return <EmptyState label="Todavía no has publicado ningún anuncio." />;
   }
 
@@ -430,6 +444,23 @@ function MyAnnoncesList({ posterId }: { posterId: string }) {
       data={annonces}
       keyExtractor={(item) => item.id}
       contentContainerClassName="gap-3 px-6 pb-10 pt-2"
+      ListHeaderComponent={
+        <View className="flex-row gap-2">
+          <Pill selected={filter === 'active'} onPress={() => setFilter('active')}>
+            Activos
+          </Pill>
+          <Pill selected={filter === 'past'} onPress={() => setFilter('past')}>
+            Anteriores
+          </Pill>
+        </View>
+      }
+      ListEmptyComponent={
+        <Text className="px-1 font-sans text-base text-olive-600">
+          {filter === 'past'
+            ? 'No tienes publicaciones anteriores.'
+            : 'No tienes publicaciones activas.'}
+        </Text>
+      }
       renderItem={({ item }) => <MyAnnonceCard annonce={item} />}
     />
   );
