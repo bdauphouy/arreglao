@@ -53,6 +53,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     [
+      'expo-location',
+      {
+        locationWhenInUsePermission:
+          'Arreglao necesita tu ubicación para completar tu dirección automáticamente.',
+      },
+    ],
+    [
       '@sentry/react-native/expo',
       {
         organization: process.env.SENTRY_ORG,

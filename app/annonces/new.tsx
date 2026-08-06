@@ -13,6 +13,7 @@ import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { annonceCreateSchema } from '../../src/schemas/annonce';
+import type { JobCategory } from '../../src/schemas/job-category';
 
 function FieldError({ message }: { message?: string }) {
   if (!message) {
@@ -25,7 +26,7 @@ export default function NewAnnonceScreen() {
   const meQuery = useCurrentProfile();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<JobCategory | null>(null);
   const [budgetRange, setBudgetRange] = useState<[number, number]>([500, 1500]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 

@@ -24,6 +24,7 @@ export const JOB_CATEGORY_LABELS: Record<JobCategory, string> = {
   informatica: 'Informática',
   ayuda_domicilio: 'Ayuda a domicilio',
   clases_particulares: 'Clases particulares',
+  otro: 'Otro',
 };
 
 export const JOB_CATEGORIES = Object.keys(JOB_CATEGORY_LABELS) as JobCategory[];
@@ -38,12 +39,13 @@ export const JOB_CATEGORY_ICONS: Record<JobCategory, LucideIcon> = {
   informatica: Laptop,
   ayuda_domicilio: HeartHandshake,
   clases_particulares: GraduationCap,
+  otro: Tag,
 };
 
 // Per-category tint pairs (background/text) for CategoryBadge — warm, muted
 // tones consistent with DESIGN.md's olive/sand palette rather than neon
 // tailwind defaults. Not expressed as tailwind.config.js tokens since these
-// nine one-off tints are only used by this single component.
+// ten one-off tints are only used by this single component.
 export const JOB_CATEGORY_COLORS: Record<JobCategory, { bg: string; text: string }> = {
   bricolaje: { bg: '#F3E4D2', text: '#8A5A22' },
   jardineria: { bg: '#DEEBD3', text: '#3F6B2B' },
@@ -54,26 +56,5 @@ export const JOB_CATEGORY_COLORS: Record<JobCategory, { bg: string; text: string
   informatica: { bg: '#DDEBF2', text: '#2C6B87' },
   ayuda_domicilio: { bg: '#FBE9D7', text: '#96591C' },
   clases_particulares: { bg: '#F5E9D0', text: '#8C6A18' },
+  otro: { bg: '#E7E4D3', text: '#5C5A44' },
 };
-
-// annonces.category is free text (#29) — a poster can type a category
-// outside JOB_CATEGORIES, so any lookup keyed by an annonce's category (as
-// opposed to iterating JOB_CATEGORIES itself) needs a fallback for values
-// that aren't one of the suggested ones.
-const CUSTOM_CATEGORY_COLORS = { bg: '#E7E4D3', text: '#5C5A44' };
-
-function isSuggestedCategory(category: string): category is JobCategory {
-  return category in JOB_CATEGORY_LABELS;
-}
-
-export function getCategoryLabel(category: string): string {
-  return isSuggestedCategory(category) ? JOB_CATEGORY_LABELS[category] : category;
-}
-
-export function getCategoryIcon(category: string): LucideIcon {
-  return isSuggestedCategory(category) ? JOB_CATEGORY_ICONS[category] : Tag;
-}
-
-export function getCategoryColors(category: string): { bg: string; text: string } {
-  return isSuggestedCategory(category) ? JOB_CATEGORY_COLORS[category] : CUSTOM_CATEGORY_COLORS;
-}

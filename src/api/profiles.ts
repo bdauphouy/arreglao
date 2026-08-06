@@ -3,8 +3,6 @@ import { decode } from 'base64-arraybuffer';
 import { supabase } from '../lib/supabase';
 import type { JobCategory } from '../schemas/job-category';
 
-export type { JobCategory };
-
 export type Profile = {
   id: string;
   email: string | null;

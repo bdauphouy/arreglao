@@ -60,6 +60,16 @@ describe('profileEditSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts the "otro" catch-all category tag', () => {
+    const result = profileEditSchema.safeParse({
+      firstName: 'Ana',
+      lastName: 'Pérez',
+      bio: '',
+      categoryTags: ['otro'],
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('rejects an invalid category tag', () => {
     const result = profileEditSchema.safeParse({
       firstName: 'Ana',

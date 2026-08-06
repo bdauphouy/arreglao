@@ -1,8 +1,8 @@
 import { View } from 'react-native';
 
 import { JOB_CATEGORIES, JOB_CATEGORY_LABELS } from '../lib/job-categories';
-import { Pill } from './pill';
 import type { JobCategory } from '../schemas/job-category';
+import { Pill } from './pill';
 
 type CategoryTagPickerProps = {
   value: JobCategory[];

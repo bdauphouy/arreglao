@@ -1,7 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ArrowLeft, Bookmark } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Bookmark,
+  ChevronRight,
+  LogOut,
+  Send,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
@@ -10,17 +18,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAnnonces, type Annonce } from '../../src/api/annonces';
 import { listApplicationsForApplicant, type Application } from '../../src/api/applications';
 import { signOut } from '../../src/api/auth';
-import { updateProfileDetails, uploadAvatar, type Profile } from '../../src/api/profiles';
+import { displayNameFor, updateProfileDetails, uploadAvatar, type Profile } from '../../src/api/profiles';
 import { listSavedAnnonceIds, unsaveAnnonce } from '../../src/api/saved-annonces';
 import type { Address } from '../../src/components/address-autocomplete';
 import { AddressAutocomplete } from '../../src/components/address-autocomplete';
+import { Avatar } from '../../src/components/avatar';
 import { AvatarPicker } from '../../src/components/avatar-picker';
 import { Badge } from '../../src/components/badge';
 import { Button } from '../../src/components/button';
 import { Card } from '../../src/components/card';
 import { CategoryBadge } from '../../src/components/category-badge';
 import { CategoryTagPicker } from '../../src/components/category-tag-picker';
-import { Pill } from '../../src/components/pill';
 import { TextArea } from '../../src/components/text-area';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
@@ -29,11 +37,29 @@ import { relativeTimeFromNow } from '../../src/lib/relative-time';
 import { profileEditSchema, type ProfileEditInput } from '../../src/schemas/profile';
 import { useAppStore } from '../../src/stores/app-store';
 
-type TabKey = 'profile' | 'applied' | 'saved';
+type ViewKey = 'menu' | 'edit' | 'applied' | 'saved';
+
+const VIEW_TITLES: Record<ViewKey, string> = {
+  menu: 'Mi perfil',
+  edit: 'Editar perfil',
+  applied: 'Postulaciones',
+  saved: 'Guardados',
+};
 
 export default function MyProfileScreen() {
   const profileQuery = useCurrentProfile();
-  const [tab, setTab] = useState<TabKey>('profile');
+  const queryClient = useQueryClient();
+  const [view, setView] = useState<ViewKey>('menu');
+
+  const resetOnboarding = useAppStore((state) => state.resetOnboarding);
+  const logoutMutation = useMutation({
+    mutationFn: signOut,
+    onSuccess: () => {
+      queryClient.setQueryData(['profile', 'me'], null);
+      resetOnboarding();
+      router.replace('/(onboarding)/welcome');
+    },
+  });
 
   if (!profileQuery.data) {
     return (
@@ -49,33 +75,132 @@ export default function MyProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-sand" edges={['top', 'left', 'right']}>
-      <View className="px-6 pt-2">
+      <View className="flex-row items-center gap-3 px-6 pb-2 pt-2">
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => (view === 'menu' ? router.back() : setView('menu'))}
           hitSlop={8}
           className="h-8 w-8 items-center justify-center"
         >
           <ArrowLeft size={22} strokeWidth={1.75} color="#14170F" />
         </Pressable>
+        <Text className="font-sans-extrabold text-xl text-ink-900">{VIEW_TITLES[view]}</Text>
       </View>
 
-      <View className="flex-row gap-2 px-6 pb-2 pt-3">
-        <Pill selected={tab === 'profile'} onPress={() => setTab('profile')}>
-          Perfil
-        </Pill>
-        <Pill selected={tab === 'applied'} onPress={() => setTab('applied')}>
-          Postulaciones
-        </Pill>
-        <Pill selected={tab === 'saved'} onPress={() => setTab('saved')}>
-          Guardados
-        </Pill>
-      </View>
-
-      {tab === 'profile' ? <ProfileEditForm key={profile.id} profile={profile} /> : null}
-      {tab === 'applied' ? <AppliedList applicantId={profile.id} /> : null}
-      {tab === 'saved' ? <SavedList userId={profile.id} /> : null}
+      {view === 'menu' ? (
+        <ProfileMenu
+          profile={profile}
+          onNavigate={setView}
+          onLogout={() => logoutMutation.mutate()}
+          loggingOut={logoutMutation.isPending}
+          logoutError={logoutMutation.isError}
+        />
+      ) : null}
+      {view === 'edit' ? (
+        <ProfileEditForm key={profile.id} profile={profile} onSaved={() => setView('menu')} />
+      ) : null}
+      {view === 'applied' ? <AppliedList applicantId={profile.id} /> : null}
+      {view === 'saved' ? <SavedList userId={profile.id} /> : null}
     </SafeAreaView>
   );
+}
+
+function ProfileMenu({
+  profile,
+  onNavigate,
+  onLogout,
+  loggingOut,
+  logoutError,
+}: {
+  profile: Profile;
+  onNavigate: (view: ViewKey) => void;
+  onLogout: () => void;
+  loggingOut: boolean;
+  logoutError: boolean;
+}) {
+  return (
+    <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-2">
+      <View className="flex-row items-center gap-3">
+        <Avatar
+          src={profile.avatarUrl}
+          initials={displayNameFor(profile).charAt(0).toUpperCase() || '?'}
+          size={56}
+        />
+        <View className="flex-1">
+          <Text className="font-sans-semibold text-lg text-ink-900">
+            {displayNameFor(profile) || 'Sin nombre'}
+          </Text>
+          {profile.averageRating != null ? (
+            <Text className="font-sans text-sm text-olive-600">
+              Calificación: {profile.averageRating.toFixed(1)}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+
+      <View className="rounded-md border border-olive-100 bg-white">
+        <MenuRow icon={UserRound} label="Editar perfil" onPress={() => onNavigate('edit')} />
+        <MenuDivider />
+        <MenuRow icon={Send} label="Postulaciones" onPress={() => onNavigate('applied')} />
+        <MenuDivider />
+        <MenuRow icon={Bookmark} label="Guardados" onPress={() => onNavigate('saved')} />
+      </View>
+
+      <View className="gap-2">
+        <View className="rounded-md border border-olive-100 bg-white">
+          <MenuRow
+            icon={LogOut}
+            label={loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
+            tone="danger"
+            onPress={onLogout}
+            disabled={loggingOut}
+            showChevron={false}
+          />
+        </View>
+        {logoutError ? (
+          <Text className="px-1 font-sans text-sm text-danger">
+            No se pudo cerrar sesión. Inténtalo de nuevo.
+          </Text>
+        ) : null}
+      </View>
+    </ScrollView>
+  );
+}
+
+function MenuRow({
+  icon: Icon,
+  label,
+  onPress,
+  disabled,
+  showChevron = true,
+  tone = 'default',
+}: {
+  icon: LucideIcon;
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  showChevron?: boolean;
+  tone?: 'default' | 'danger';
+}) {
+  const iconColor = tone === 'danger' ? '#C1473B' : '#14170F';
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      className={`flex-row items-center gap-3 px-4 py-4 active:bg-olive-50 ${disabled ? 'opacity-50' : ''}`}
+    >
+      <Icon size={18} color={iconColor} />
+      <Text
+        className={`flex-1 font-sans-medium text-base ${tone === 'danger' ? 'text-danger' : 'text-ink-900'}`}
+      >
+        {label}
+      </Text>
+      {showChevron ? <ChevronRight size={18} color="#9C9877" /> : null}
+    </Pressable>
+  );
+}
+
+function MenuDivider() {
+  return <View className="h-px bg-olive-100" />;
 }
 
 function EmptyState({ label }: { label: string }) {
@@ -237,7 +362,7 @@ function SavedCard({
   );
 }
 
-function ProfileEditForm({ profile }: { profile: Profile }) {
+function ProfileEditForm({ profile, onSaved }: { profile: Profile; onSaved: () => void }) {
   const queryClient = useQueryClient();
   const [address, setAddress] = useState<Address | null>(
     profile.location && profile.addressLabel
@@ -264,6 +389,7 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      onSaved();
     },
   });
 
@@ -274,20 +400,9 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
     },
   });
 
-  const resetOnboarding = useAppStore((state) => state.resetOnboarding);
-
-  const logoutMutation = useMutation({
-    mutationFn: signOut,
-    onSuccess: () => {
-      queryClient.setQueryData(['profile', 'me'], null);
-      resetOnboarding();
-      router.replace('/(onboarding)/welcome');
-    },
-  });
-
   return (
     <ScrollView contentContainerClassName="gap-6 px-6 pb-10 pt-2">
-      <View className="items-center gap-3">
+      <View className="items-start gap-3">
         <AvatarPicker
           avatarUrl={profile.avatarUrl}
           uploading={uploadAvatarMutation.isPending}
@@ -382,21 +497,6 @@ function ProfileEditForm({ profile }: { profile: Profile }) {
       >
         {saveProfile.isPending ? 'Guardando…' : 'Guardar'}
       </Button>
-
-      <Button
-        variant="outline"
-        size="lg"
-        onPress={() => logoutMutation.mutate()}
-        disabled={logoutMutation.isPending}
-      >
-        {logoutMutation.isPending ? 'Cerrando sesión…' : 'Cerrar sesión'}
-      </Button>
-
-      {logoutMutation.isError ? (
-        <Text className="font-sans text-sm text-danger">
-          No se pudo cerrar sesión. Inténtalo de nuevo.
-        </Text>
-      ) : null}
     </ScrollView>
   );
 }
