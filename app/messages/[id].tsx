@@ -25,10 +25,6 @@ import { IconButton } from '../../src/components/icon-button';
 import { TextField } from '../../src/components/text-field';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { ANNONCE_STATUS_LABELS, ANNONCE_STATUS_TONES } from '../../src/lib/annonce-status';
-import {
-  APPLICATION_STATUS_LABELS,
-  APPLICATION_STATUS_TONES,
-} from '../../src/lib/application-status';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -175,12 +171,6 @@ export default function ConversationScreen() {
         {unassignMutation.isPending ? 'Cambiando…' : 'Cambiar decisión'}
       </Button>
     );
-  } else if (application && application.status !== 'pending' && !isChosen) {
-    assignmentAction = (
-      <Badge tone={APPLICATION_STATUS_TONES[application.status]}>
-        {APPLICATION_STATUS_LABELS[application.status]}
-      </Badge>
-    );
   }
 
   return (
@@ -223,7 +213,7 @@ export default function ConversationScreen() {
               </Badge>
             </Pressable>
 
-            {application ? (
+            {application && application.status !== 'withdrawn' ? (
               <View className="flex-row items-center justify-between rounded-md bg-olive-50 px-3 py-2">
                 <Text className="font-sans-semibold text-sm text-olive-700">Precio propuesto</Text>
                 <Text className="font-sans-bold text-base text-ink-900">
