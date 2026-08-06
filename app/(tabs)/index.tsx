@@ -13,6 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { Annonce } from '../../src/api/annonces';
 import { listOpenAnnonces } from '../../src/api/annonces';
+import { listApplicationsForApplicant } from '../../src/api/applications';
 import { displayNameFor, getProfiles, type Profile } from '../../src/api/profiles';
 import { listSavedAnnonceIds, saveAnnonce, unsaveAnnonce } from '../../src/api/saved-annonces';
 import { AnnonceCard } from '../../src/components/annonce-card';
@@ -31,9 +32,23 @@ export default function HomeScreen() {
   });
 
   const me = meQuery.data ?? null;
+
+  const myApplicationsQuery = useQuery({
+    queryKey: ['applications', 'mine', me?.id],
+    queryFn: () => listApplicationsForApplicant(me!.id),
+    enabled: !!me,
+  });
+  const appliedAnnonceIds = useMemo(
+    () => new Set((myApplicationsQuery.data ?? []).map((application) => application.annonceId)),
+    [myApplicationsQuery.data],
+  );
+
   const annonces = useMemo(
-    () => (annoncesQuery.data ?? []).filter((annonce) => annonce.posterId !== me?.id),
-    [annoncesQuery.data, me?.id],
+    () =>
+      (annoncesQuery.data ?? []).filter(
+        (annonce) => annonce.posterId !== me?.id && !appliedAnnonceIds.has(annonce.id),
+      ),
+    [annoncesQuery.data, me?.id, appliedAnnonceIds],
   );
   const myLocation = me?.location ?? null;
 

@@ -1,11 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Minus, Plus } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import type { Annonce } from '../api/annonces';
 import { applyToAnnonce, hasApplied, listApplicationsForAnnonce } from '../api/applications';
-import { clampPrice, PRICE_STEP, QUICK_PICK_PRICES, suggestedApplicationPrice } from '../lib/pricing';
+import {
+  clampPrice,
+  parsePriceInput,
+  PRICE_STEP,
+  QUICK_PICK_PRICES,
+  suggestedApplicationPrice,
+} from '../lib/pricing';
 import { Badge } from './badge';
 import { Button } from './button';
 import { Pill } from './pill';
@@ -46,6 +52,7 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
     mutationFn: () => applyToAnnonce(annonce.id, applicantId, message.trim(), price),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application', 'mine', annonce.id] });
+      queryClient.invalidateQueries({ queryKey: ['applications', 'mine', applicantId] });
       queryClient.invalidateQueries({ queryKey: ['applications', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['annonce', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['annonces'] });
@@ -59,7 +66,7 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
     return <Badge tone="success">Ya aplicaste</Badge>;
   }
 
-  const canSubmit = price > 0;
+  const canSubmit = price >= 0;
 
   return (
     <View className="gap-3">
@@ -79,7 +86,31 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
       ) : null}
 
       <View className="gap-2">
-        <Text className="font-sans-semibold text-sm text-olive-700">Tu precio (Lempiras)</Text>
+        <Text className="font-sans-semibold text-sm text-olive-700">Tu precio</Text>
+        <View className="flex-row items-center self-start gap-1 rounded-full border border-olive-200 bg-white py-1 pl-1 pr-3">
+          <Pressable
+            onPress={() => adjustPrice(-PRICE_STEP)}
+            className="h-10 w-10 items-center justify-center rounded-full active:bg-olive-50"
+          >
+            <Minus size={18} color="#14170F" />
+          </Pressable>
+          <View className="flex-row items-center">
+            <Text className="font-sans-extrabold text-2xl leading-tight text-ink-900">L </Text>
+            <TextInput
+              value={String(price)}
+              onChangeText={(text) => setPrice(parsePriceInput(text))}
+              keyboardType="numeric"
+              className="min-w-16 p-0 font-sans-extrabold text-2xl leading-tight text-ink-900"
+              style={{ includeFontPadding: false, textAlignVertical: 'center' }}
+            />
+          </View>
+          <Pressable
+            onPress={() => adjustPrice(PRICE_STEP)}
+            className="h-10 w-10 items-center justify-center rounded-full active:bg-olive-50"
+          >
+            <Plus size={18} color="#14170F" />
+          </Pressable>
+        </View>
         <View className="flex-row flex-wrap gap-2">
           {QUICK_PICK_PRICES.map((amount) => (
             <Pill key={amount} selected={price === amount} onPress={() => setPrice(amount)}>
@@ -87,29 +118,10 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
             </Pill>
           ))}
         </View>
-        <View className="flex-row items-center justify-center gap-4 py-1">
-          <Pressable
-            onPress={() => adjustPrice(-PRICE_STEP)}
-            className="h-10 w-10 items-center justify-center rounded-full border border-olive-200 bg-white active:bg-olive-50"
-          >
-            <Minus size={18} color="#14170F" />
-          </Pressable>
-          <Text className="min-w-24 text-center font-sans-extrabold text-2xl text-ink-900">
-            L {price}
-          </Text>
-          <Pressable
-            onPress={() => adjustPrice(PRICE_STEP)}
-            className="h-10 w-10 items-center justify-center rounded-full border border-olive-200 bg-white active:bg-olive-50"
-          >
-            <Plus size={18} color="#14170F" />
-          </Pressable>
-        </View>
       </View>
 
       <View className="gap-2">
-        <Text className="font-sans-semibold text-sm text-olive-700">
-          Comentario (opcional)
-        </Text>
+        <Text className="font-sans-semibold text-sm text-olive-700">Comentario (opcional)</Text>
         <TextArea
           placeholder="Cuéntale al anfitrión por qué eres una buena opción"
           value={message}
