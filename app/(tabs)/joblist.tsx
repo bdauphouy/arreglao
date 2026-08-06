@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import { AppleMaps } from 'expo-maps';
 import { Image as ExpoImage, type ImageRef } from 'expo-image';
+import { Hand } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   FlatList,
   Image as RNImage,
   Platform,
-  Pressable,
   Text,
   useWindowDimensions,
   View,
@@ -17,8 +18,7 @@ import { captureRef } from 'react-native-view-shot';
 
 import { listOpenAnnonces, type Annonce } from '../../src/api/annonces';
 import { displayNameFor, getProfiles } from '../../src/api/profiles';
-import { Avatar } from '../../src/components/avatar';
-import { CategoryBadge } from '../../src/components/category-badge';
+import { AnnonceCard } from '../../src/components/annonce-card';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { distanceKm } from '../../src/lib/distance';
 
@@ -39,13 +39,23 @@ type Cluster = {
   lat: number;
   lng: number;
   annonces: Annonce[];
+  // True when every annonce in the cluster sits within SAME_ADDRESS_EPSILON_KM
+  // of the centroid — i.e. they're effectively at the exact same address, not
+  // just nearby. Zooming in can never split a cluster like this apart (the
+  // clustering threshold shrinks with zoom but never reaches zero), so it
+  // needs a different tap behavior and a different pin — see onAnnotationClick.
+  sameAddress: boolean;
 };
+
+// Below this distance from a cluster's centroid, annonces are treated as
+// being at the same address rather than merely nearby.
+const SAME_ADDRESS_EPSILON_KM = 0.02;
 
 // Greedy single-pass grouping: each annonce joins the first existing cluster
 // within thresholdKm of its running centroid, else starts a new one. Good
 // enough for the handful of open annonces a neighborhood map shows at once.
 function clusterAnnonces(annonces: Annonce[], thresholdKm: number): Cluster[] {
-  const clusters: Cluster[] = [];
+  const clusters: Omit<Cluster, 'sameAddress'>[] = [];
   for (const annonce of annonces) {
     const nearby = clusters.find(
       (cluster) =>
@@ -65,7 +75,14 @@ function clusterAnnonces(annonces: Annonce[], thresholdKm: number): Cluster[] {
       });
     }
   }
-  return clusters;
+  return clusters.map((cluster) => ({
+    ...cluster,
+    sameAddress: cluster.annonces.every(
+      (annonce) =>
+        distanceKm({ lat: cluster.lat, lng: cluster.lng }, annonce.location) <
+        SAME_ADDRESS_EPSILON_KM,
+    ),
+  }));
 }
 
 // expo-maps draws a plain 50x50 square for annotation `icon`s (no clip
@@ -221,6 +238,77 @@ function ClusterBadgeLoader({
   );
 }
 
+// Same rasterize-to-circle trick as ClusterBadgeLoader, but for a
+// same-address stack (see Cluster.sameAddress) — offers that sit at the
+// exact same location, which zooming in can never split apart. Deliberately
+// styled as a rounded *square* in the accent color, not a circle, so it
+// reads as a different kind of pin at a glance: tapping it opens the swipe
+// slider straight away instead of zooming the map further.
+function StackBadgeLoader({
+  count,
+  onReady,
+}: {
+  count: number;
+  onReady: (count: number, image: ResolvedIcon) => void;
+}) {
+  const viewRef = useRef<View>(null);
+  const [laidOut, setLaidOut] = useState(false);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!laidOut || done) {
+      return;
+    }
+    let cancelled = false;
+    let secondFrame: number | null = null;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        captureRef(viewRef, { format: 'png', result: 'tmpfile' })
+          .then((uri) => ExpoImage.loadAsync(uri, { maxWidth: 128, maxHeight: 128 }))
+          .then((image) => {
+            if (!cancelled) {
+              setDone(true);
+              onReady(count, image);
+            }
+          })
+          .catch(() => {});
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame != null) {
+        cancelAnimationFrame(secondFrame);
+      }
+    };
+  }, [laidOut, done, count, onReady]);
+
+  return (
+    <View
+      ref={viewRef}
+      collapsable={false}
+      onLayout={() => setLaidOut(true)}
+      style={{
+        position: 'absolute',
+        top: -1000,
+        left: -1000,
+        width: 64,
+        height: 64,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#D6F24C',
+        borderWidth: 3,
+        borderColor: '#FFFFFF',
+      }}
+    >
+      <Text style={{ fontFamily: 'PlusJakartaSans_700Bold', fontSize: 20, color: '#14170F' }}>
+        ×{count}
+      </Text>
+    </View>
+  );
+}
+
 // Same rasterize-to-circle trick as AvatarCircleLoader, used when a poster
 // has no avatarUrl — matches Avatar's own fallback (src/components/avatar.tsx):
 // an olive-200 circle with the poster's initial, instead of the default map
@@ -293,14 +381,18 @@ function InitialsCircleLoader({
 
 export default function JoblistScreen() {
   const meQuery = useCurrentProfile();
-  const myLocation = meQuery.data?.location ?? null;
+  const me = meQuery.data ?? null;
+  const myLocation = me?.location ?? null;
   const mapRef = useRef<AppleMaps.MapView>(null);
 
   const annoncesQuery = useQuery({
     queryKey: ['annonces', 'open'],
     queryFn: () => listOpenAnnonces(),
   });
-  const annonces = useMemo(() => annoncesQuery.data ?? [], [annoncesQuery.data]);
+  const annonces = useMemo(
+    () => (annoncesQuery.data ?? []).filter((annonce) => annonce.posterId !== me?.id),
+    [annoncesQuery.data, me?.id],
+  );
 
   const posterIds = useMemo(
     () => Array.from(new Set(annonces.map((annonce) => annonce.posterId))),
@@ -355,6 +447,11 @@ export default function JoblistScreen() {
     setBadgeIcons((prev) => (prev.has(count) ? prev : new Map(prev).set(count, image)));
   };
 
+  const [stackIcons, setStackIcons] = useState<Map<number, ResolvedIcon>>(new Map());
+  const handleStackIconReady = (count: number, image: ResolvedIcon) => {
+    setStackIcons((prev) => (prev.has(count) ? prev : new Map(prev).set(count, image)));
+  };
+
   const [region, setRegion] = useState<{ zoom: number; latitudeDelta: number } | null>(null);
   const regionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -379,7 +476,25 @@ export default function JoblistScreen() {
 
   const clusterCounts = useMemo(
     () =>
-      Array.from(new Set(clusters.filter((cluster) => cluster.annonces.length > 1).map((c) => c.annonces.length))),
+      Array.from(
+        new Set(
+          clusters
+            .filter((cluster) => cluster.annonces.length > 1 && !cluster.sameAddress)
+            .map((c) => c.annonces.length),
+        ),
+      ),
+    [clusters],
+  );
+
+  const stackCounts = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          clusters
+            .filter((cluster) => cluster.annonces.length > 1 && cluster.sameAddress)
+            .map((c) => c.annonces.length),
+        ),
+      ),
     [clusters],
   );
 
@@ -403,10 +518,10 @@ export default function JoblistScreen() {
     });
   };
 
-  // Card width matches the slider's inset-x-4 (16px) side margins, so
-  // pagingEnabled below snaps exactly one card per swipe.
+  // Card spans the full screen width (no side margins), so pagingEnabled
+  // below snaps exactly one card per swipe.
   const { width: windowWidth } = useWindowDimensions();
-  const cardWidth = windowWidth - 32;
+  const cardWidth = windowWidth;
 
   const sliderRef = useRef<FlatList<Annonce>>(null);
   // Tracks which selection change originated from the slider itself, so the
@@ -422,9 +537,50 @@ export default function JoblistScreen() {
     sliderRef.current?.scrollToIndex({ index: selectedIndex, animated: true });
   }, [selectedId, selectedIndex]);
 
+  // Shows a hand icon sliding left/right over the slider once, the first
+  // time it appears, so the card's horizontal swipeability isn't purely
+  // undiscoverable. Overlaid via `showSwipeHint`/`pointerEvents="none"`
+  // rather than moving the card itself, so it never interferes with the
+  // real swipe gesture.
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+  const [handX] = useState(() => new Animated.Value(0));
+  const [handOpacity] = useState(() => new Animated.Value(0));
+  const hasShownSwipeHintRef = useRef(false);
+  useEffect(() => {
+    if (!selectedId || hasShownSwipeHintRef.current) {
+      return;
+    }
+    hasShownSwipeHintRef.current = true;
+    setShowSwipeHint(true);
+    // Easing.inOut on every leg (rather than the default linear-ish curve)
+    // so the hand accelerates out of and decelerates into each direction
+    // change instead of visibly snapping at the turnarounds.
+    const ease = Easing.inOut(Easing.ease);
+    Animated.sequence([
+      Animated.timing(handOpacity, {
+        toValue: 1,
+        duration: 220,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(handX, { toValue: -30, duration: 520, easing: ease, useNativeDriver: true }),
+      Animated.timing(handX, { toValue: 0, duration: 460, easing: ease, useNativeDriver: true }),
+      Animated.timing(handX, { toValue: 30, duration: 520, easing: ease, useNativeDriver: true }),
+      Animated.timing(handX, { toValue: 0, duration: 460, easing: ease, useNativeDriver: true }),
+      Animated.timing(handOpacity, {
+        toValue: 0,
+        duration: 260,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowSwipeHint(false));
+  }, [selectedId, handX, handOpacity]);
+
   const annotations: AppleMaps.Annotation[] = clusters.map((cluster) => {
     if (cluster.annonces.length > 1) {
-      const icon = badgeIcons.get(cluster.annonces.length);
+      const icon = cluster.sameAddress
+        ? stackIcons.get(cluster.annonces.length)
+        : badgeIcons.get(cluster.annonces.length);
       return {
         id: cluster.id,
         coordinates: { latitude: cluster.lat, longitude: cluster.lng },
@@ -452,6 +608,9 @@ export default function JoblistScreen() {
       ))}
       {clusterCounts.map((count) => (
         <ClusterBadgeLoader key={count} count={count} onReady={handleBadgeIconReady} />
+      ))}
+      {stackCounts.map((count) => (
+        <StackBadgeLoader key={count} count={count} onReady={handleStackIconReady} />
       ))}
       {posterInitials.map((initial) => (
         <InitialsCircleLoader key={initial} initial={initial} onReady={handleInitialsIconReady} />
@@ -490,6 +649,17 @@ export default function JoblistScreen() {
                 return;
               }
               if (cluster.annonces.length > 1) {
+                if (cluster.sameAddress) {
+                  // Zooming in can never split annonces that share an exact
+                  // address apart (see Cluster.sameAddress) — open the slider
+                  // on the first one instead, so the user can swipe between
+                  // them right away rather than tapping a pin that never
+                  // visibly reacts.
+                  const annonce = cluster.annonces[0];
+                  setSelectedId(annonce.id);
+                  focusAnnonce(annonce);
+                  return;
+                }
                 mapRef.current?.setCameraPosition({
                   coordinates: { latitude: cluster.lat, longitude: cluster.lng },
                   zoom: (region?.zoom ?? SAN_PEDRO_SULA_CAMERA.zoom) + 2,
@@ -503,7 +673,7 @@ export default function JoblistScreen() {
           />
 
           {selectedAnnonce ? (
-            <View className="absolute inset-x-4 bottom-4">
+            <View className="absolute inset-x-0 bottom-4">
               <FlatList
                 ref={sliderRef}
                 data={sortedAnnonces}
@@ -526,59 +696,37 @@ export default function JoblistScreen() {
                     focusAnnonce(annonce);
                   }
                 }}
-                renderItem={({ item: annonce }) => {
-                  const poster = posterById.get(annonce.posterId);
-                  return (
-                    <View
-                      style={{ width: cardWidth }}
-                      className="gap-2 rounded-md border border-olive-100 bg-white p-4"
-                    >
-                      <Pressable
-                        onPress={() => poster && router.push(`/profile/${poster.id}`)}
-                        className="flex-row items-center gap-3"
-                      >
-                        <Avatar
-                          src={poster?.avatarUrl}
-                          initials={poster ? displayNameFor(poster).charAt(0).toUpperCase() || '?' : '?'}
-                          size={44}
-                        />
-                        <View className="flex-1">
-                          <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
-                            {poster ? displayNameFor(poster) : 'Cargando…'}
-                          </Text>
-                          {poster?.averageRating != null ? (
-                            <Text className="font-sans text-xs text-olive-600">
-                              ★ {poster.averageRating.toFixed(1)}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <CategoryBadge category={annonce.category} />
-                      </Pressable>
-
-                      <Pressable onPress={() => router.push(`/annonces/${annonce.id}`)} className="gap-1">
-                        <Text numberOfLines={1} className="font-sans-semibold text-base text-ink-900">
-                          {annonce.title}
-                        </Text>
-                        <Text numberOfLines={2} className="font-sans text-sm text-olive-700">
-                          {annonce.description}
-                        </Text>
-                        <View className="flex-row items-center gap-2 pt-1">
-                          {annonce.budgetMin != null && annonce.budgetMax != null ? (
-                            <Text className="font-sans-semibold text-sm text-ink-900">
-                              L {annonce.budgetMin} - L {annonce.budgetMax}
-                            </Text>
-                          ) : null}
-                          {myLocation ? (
-                            <Text className="font-sans text-xs text-olive-600">
-                              {distanceKm(myLocation, annonce.location).toFixed(1)} km
-                            </Text>
-                          ) : null}
-                        </View>
-                      </Pressable>
-                    </View>
-                  );
-                }}
+                renderItem={({ item: annonce }) => (
+                  <View style={{ width: cardWidth, paddingHorizontal: 16 }}>
+                    <AnnonceCard
+                      annonce={annonce}
+                      poster={posterById.get(annonce.posterId)}
+                      myLocation={myLocation}
+                    />
+                  </View>
+                )}
               />
+
+              {showSwipeHint ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: handOpacity,
+                    transform: [{ translateX: handX }],
+                  }}
+                >
+                  <View className="h-12 w-12 items-center justify-center rounded-full bg-ink-900/85">
+                    <Hand size={22} strokeWidth={1.75} color="#FFFFFF" />
+                  </View>
+                </Animated.View>
+              ) : null}
             </View>
           ) : null}
         </View>

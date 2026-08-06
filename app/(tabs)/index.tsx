@@ -15,14 +15,12 @@ import type { Annonce } from '../../src/api/annonces';
 import { listOpenAnnonces } from '../../src/api/annonces';
 import { displayNameFor, getProfiles, type Profile } from '../../src/api/profiles';
 import { listSavedAnnonceIds, saveAnnonce, unsaveAnnonce } from '../../src/api/saved-annonces';
+import { AnnonceCard } from '../../src/components/annonce-card';
 import { ApplyForm } from '../../src/components/apply-form';
 import { Avatar } from '../../src/components/avatar';
-import { Card } from '../../src/components/card';
-import { CategoryBadge } from '../../src/components/category-badge';
 import { CategoryRail } from '../../src/components/category-rail';
 import { useCurrentProfile } from '../../src/hooks/use-current-profile';
 import { distanceKm, type Coordinates } from '../../src/lib/distance';
-import { relativeTimeFromNow } from '../../src/lib/relative-time';
 import type { JobCategory } from '../../src/schemas/job-category';
 
 export default function HomeScreen() {
@@ -294,55 +292,9 @@ function AnnonceFeedCard({
     });
   };
 
-  const budgetLabel =
-    annonce.budgetMin != null && annonce.budgetMax != null
-      ? `L ${annonce.budgetMin} - L ${annonce.budgetMax}`
-      : null;
-
   return (
     <View>
-      <Pressable onPress={() => router.push(`/annonces/${annonce.id}`)}>
-        <Card className="gap-3">
-          <View className="flex-row items-center gap-3">
-            <Avatar
-              src={poster?.avatarUrl}
-              initials={poster ? displayNameFor(poster).charAt(0).toUpperCase() || '?' : '?'}
-              size={36}
-            />
-            <View className="flex-1">
-              <Text className="font-sans-semibold text-sm text-ink-900">
-                {poster ? displayNameFor(poster) : 'Cargando…'}
-              </Text>
-              <Text className="font-sans text-xs text-olive-600">
-                {relativeTimeFromNow(annonce.createdAt)}
-              </Text>
-            </View>
-            <CategoryBadge category={annonce.category} />
-          </View>
-
-          <View className="gap-1">
-            <Text className="font-sans-semibold text-base text-ink-900">{annonce.title}</Text>
-            <Text numberOfLines={2} className="font-sans text-sm text-olive-700">
-              {annonce.description}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center gap-3">
-            {budgetLabel ? (
-              <Text className="font-sans-semibold text-sm text-ink-900">{budgetLabel}</Text>
-            ) : null}
-            {myLocation ? (
-              <Text className="font-sans text-xs text-olive-600">
-                {distanceKm(myLocation, annonce.location).toFixed(1)} km
-              </Text>
-            ) : null}
-            <Text className="font-sans text-xs text-olive-600">
-              {annonce.applicationsCount}{' '}
-              {annonce.applicationsCount === 1 ? 'aplicante' : 'aplicantes'}
-            </Text>
-          </View>
-        </Card>
-      </Pressable>
+      <AnnonceCard annonce={annonce} poster={poster} myLocation={myLocation} />
 
       {me ? (
         <View className="mt-1 flex-row items-center rounded-md border border-olive-100 bg-white">
