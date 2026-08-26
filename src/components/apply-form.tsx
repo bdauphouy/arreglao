@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
@@ -42,6 +43,7 @@ export function ApplyForm({ annonce, applicantId, onApplied }: ApplyFormProps) {
   const applyMutation = useMutation({
     mutationFn: () => applyToAnnonce(annonce.id, applicantId, message.trim(), price),
     onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       queryClient.invalidateQueries({ queryKey: ['application', 'mine', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['applications', 'mine', applicantId] });
       queryClient.invalidateQueries({ queryKey: ['applications', annonce.id] });

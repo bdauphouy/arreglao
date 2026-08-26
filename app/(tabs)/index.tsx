@@ -6,6 +6,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { Bookmark, Send, Share2 } from 'lucide-react-native';
 import { useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Pressable, ScrollView, Share, Text, View } from 'react-native';
@@ -316,7 +317,10 @@ function AnnonceFeedCard({
           <CardAction
             icon={<Bookmark size={16} color="#14170F" fill={saved ? '#14170F' : 'none'} />}
             label="Guardar"
-            onPress={() => saveMutation.mutate()}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              saveMutation.mutate();
+            }}
           />
           <View className="h-8 w-px bg-olive-100" />
           <CardAction icon={<Send size={16} color="#14170F" />} label="Aplicar" onPress={onApply} />

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -186,6 +187,7 @@ function ApplicantsSection({
   const assignMutation = useMutation({
     mutationFn: (helperId: string) => assignAnnonce(annonce.id, helperId),
     onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       queryClient.invalidateQueries({ queryKey: ['annonce', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['annonces'] });
       queryClient.invalidateQueries({ queryKey: ['applications', annonce.id] });
@@ -195,6 +197,7 @@ function ApplicantsSection({
   const unassignMutation = useMutation({
     mutationFn: () => unassignAnnonce(annonce.id),
     onSuccess: () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       queryClient.invalidateQueries({ queryKey: ['annonce', annonce.id] });
       queryClient.invalidateQueries({ queryKey: ['annonces'] });
       queryClient.invalidateQueries({ queryKey: ['applications', annonce.id] });

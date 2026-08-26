@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { Pressable, View } from 'react-native';
 
 type SwitchProps = {
@@ -9,7 +10,10 @@ type SwitchProps = {
 export function Switch({ value, onValueChange, disabled }: SwitchProps) {
   return (
     <Pressable
-      onPress={() => onValueChange(!value)}
+      onPress={() => {
+        Haptics.selectionAsync();
+        onValueChange(!value);
+      }}
       disabled={disabled}
       className={`h-8 w-14 justify-center rounded-full px-1 ${value ? 'bg-accent' : 'bg-olive-200'} ${
         disabled ? 'opacity-50' : ''

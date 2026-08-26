@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { ArrowLeft, Send } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
@@ -72,6 +73,7 @@ export default function ConversationScreen() {
   const assignMutation = useMutation({
     mutationFn: () => assignAnnonce(annonceId!, otherId!),
     onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       queryClient.invalidateQueries({ queryKey: ['annonce', annonceId] });
       queryClient.invalidateQueries({ queryKey: ['annonces'] });
       queryClient.invalidateQueries({ queryKey: ['application', annonceId, otherId] });
@@ -81,6 +83,7 @@ export default function ConversationScreen() {
   const unassignMutation = useMutation({
     mutationFn: () => unassignAnnonce(annonceId!),
     onSuccess: () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       queryClient.invalidateQueries({ queryKey: ['annonce', annonceId] });
       queryClient.invalidateQueries({ queryKey: ['annonces'] });
       queryClient.invalidateQueries({ queryKey: ['application', annonceId, otherId] });
@@ -287,6 +290,7 @@ export default function ConversationScreen() {
             active
             onPress={() => {
               if (draft.trim().length > 0) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 sendMutation.mutate();
               }
             }}

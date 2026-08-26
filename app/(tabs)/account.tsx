@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import {
   ArrowLeft,
   Bookmark,
@@ -551,7 +552,10 @@ function SavedCard({
         }
       />
       <Pressable
-        onPress={onUnsave}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onUnsave();
+        }}
         disabled={unsaving}
         className="mt-1 flex-row items-center justify-center gap-2 rounded-md border border-olive-100 bg-white py-2"
       >
